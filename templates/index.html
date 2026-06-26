@@ -38,13 +38,38 @@
       flex-direction: column;
       align-items: center;
       gap: 16px;
-      margin-top: 80px;
+      margin-top: 60px;
+      width: 100%;
+      max-width: 500px;
     }
+    #start-screen p { color: #aaa; font-size: 1rem; }
     #btn-start {
       background: #e94560;
       color: #fff;
       font-size: 1.4rem;
       padding: 14px 40px;
+    }
+    #start-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #btn-load-autosave {
+      background: #4fc3f7;
+      color: #000;
+      font-size: 1rem;
+    }
+    #btn-open-saves {
+      background: #0f3460;
+      color: #eee;
+      border: 1px solid #4fc3f7;
+      font-size: 1rem;
+    }
+    #autosave-info {
+      font-size: .85rem;
+      color: #80deea;
+      text-align: center;
     }
 
     /* ── ゲーム画面 ── */
@@ -59,6 +84,7 @@
       padding: 14px 20px;
       margin-bottom: 16px;
       flex-wrap: wrap;
+      align-items: center;
     }
     .stat { display: flex; flex-direction: column; align-items: center; }
     .stat-label { font-size: .75rem; color: #aaa; margin-bottom: 4px; }
@@ -67,6 +93,16 @@
     .block { color: #4fc3f7; }
     .energy{ color: #ffd54f; }
     .enemy-hp { color: #ef9a9a; }
+
+    /* セーブボタン（ステータスバー内） */
+    #btn-save-quick {
+      background: #0f3460;
+      color: #eee;
+      border: 1px solid #4fc3f7;
+      font-size: .85rem;
+      padding: 6px 14px;
+      margin-left: auto;
+    }
 
     /* ── ログ ── */
     #log-box {
@@ -93,7 +129,7 @@
       border: 2px solid #4fc3f7;
       border-radius: 10px;
       padding: 12px 16px;
-      min-width: 110px;
+      min-width: 120px;
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -125,6 +161,119 @@
     .node-btn.rest   { background: #2e7d32; }
     .node-btn.boss   { background: #bf360c; }
 
+    /* ── 報酬エリア ── */
+    #reward-area { display: none; }
+    #reward-area h2 { margin-bottom: 12px; color: #ffd54f; }
+    #reward-cards {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .reward-card-btn {
+      background: #1a1a4e;
+      color: #eee;
+      border: 2px solid #ffd54f;
+      border-radius: 12px;
+      padding: 16px 20px;
+      min-width: 140px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
+    }
+    .reward-card-btn:hover { background: #2a2a6e; border-color: #fff176; }
+    .reward-card-btn .card-name { font-weight: bold; font-size: 1.05rem; color: #ffd54f; }
+    .reward-card-btn .card-cost { font-size: .82rem; color: #aaa; }
+    .reward-card-btn .card-desc { font-size: .82rem; color: #b2dfdb; }
+    #btn-skip-reward {
+      background: #555;
+      color: #eee;
+      font-size: .9rem;
+    }
+
+    /* ── セーブ/ロード モーダル ── */
+    #save-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #save-modal-overlay.active { display: flex; }
+    #save-modal {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 28px;
+      width: 90%;
+      max-width: 520px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #save-modal h2 { color: #ffd54f; margin-bottom: 16px; }
+    #save-name-input {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #4fc3f7;
+      background: #0f3460;
+      color: #eee;
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+    #btn-do-save {
+      background: #e94560;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    #save-list-area h3 { color: #80deea; margin-bottom: 10px; font-size: 1rem; }
+    .save-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #0f3460;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+    }
+    .save-item-info { flex: 1; }
+    .save-item-name { font-weight: bold; font-size: .95rem; }
+    .save-item-meta { font-size: .78rem; color: #aaa; }
+    .btn-load-item {
+      background: #4fc3f7;
+      color: #000;
+      font-size: .85rem;
+      padding: 6px 14px;
+    }
+    #btn-close-modal {
+      background: #555;
+      color: #eee;
+      margin-top: 12px;
+    }
+    #autosave-section {
+      border-top: 1px solid #333;
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+    #autosave-section h3 { color: #80deea; margin-bottom: 10px; font-size: 1rem; }
+    #autosave-item {
+      background: #0f3460;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      font-size: .88rem;
+      color: #b2dfdb;
+    }
+    #btn-load-autosave-modal {
+      background: #4fc3f7;
+      color: #000;
+      font-size: .9rem;
+    }
+
     /* ── 終了画面 ── */
     #end-screen {
       display: none;
@@ -140,6 +289,13 @@
 
     /* ── ノードタイプ日本語 ── */
     .type-label { font-size: .8rem; color: #aaa; margin-bottom: 8px; }
+
+    /* ── デッキ枚数表示 ── */
+    #deck-info {
+      font-size: .82rem;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
@@ -150,6 +306,11 @@
 <div id="start-screen">
   <p>Slay the Spire 風ターン制カードバトルゲーム</p>
   <button id="btn-start">ゲームスタート</button>
+  <div id="start-actions">
+    <button id="btn-load-autosave" style="display:none">⏱ 自動セーブから再開</button>
+    <button id="btn-open-saves">💾 セーブデータを選択</button>
+  </div>
+  <div id="autosave-info"></div>
 </div>
 
 <!-- ゲーム画面 -->
@@ -177,10 +338,14 @@
       <span class="stat-label">現在ノード</span>
       <span class="stat-value" id="current-node">-</span>
     </div>
+    <button id="btn-save-quick">💾 セーブ</button>
   </div>
 
   <!-- ログ -->
   <div id="log-box">ゲームを開始しました。</div>
+
+  <!-- デッキ情報 -->
+  <div id="deck-info"></div>
 
   <!-- 戦闘エリア -->
   <div id="battle-area">
@@ -194,12 +359,47 @@
     <div id="node-buttons"></div>
   </div>
 
+  <!-- 報酬エリア -->
+  <div id="reward-area">
+    <h2>🎁 カードを選択してデッキに追加</h2>
+    <div id="reward-cards"></div>
+    <button id="btn-skip-reward">スキップ（カードを取らない）</button>
+  </div>
+
 </div>
 
 <!-- 終了画面 -->
 <div id="end-screen">
   <div id="end-message"></div>
   <button id="btn-restart">もう一度プレイ</button>
+</div>
+
+<!-- セーブ/ロード モーダル -->
+<div id="save-modal-overlay">
+  <div id="save-modal">
+    <h2>💾 セーブ / ロード</h2>
+
+    <!-- 手動セーブ（ゲーム中のみ表示） -->
+    <div id="manual-save-section">
+      <input type="text" id="save-name-input" placeholder="セーブ名を入力..." value="セーブデータ" />
+      <button id="btn-do-save">このデータをセーブ</button>
+    </div>
+
+    <!-- 自動セーブ -->
+    <div id="autosave-section">
+      <h3>⏱ 自動セーブ</h3>
+      <div id="autosave-item">自動セーブなし</div>
+      <button id="btn-load-autosave-modal" style="display:none">自動セーブからロード</button>
+    </div>
+
+    <!-- 手動セーブ一覧 -->
+    <div id="save-list-area">
+      <h3>📋 セーブ一覧</h3>
+      <div id="save-list-items"></div>
+    </div>
+
+    <button id="btn-close-modal">閉じる</button>
+  </div>
 </div>
 
 <script>
@@ -214,10 +414,16 @@ const NODE_TYPE_JA = {
 };
 
 const CARD_DESC = {
-  damage: (v) => `${v} ダメージ`,
-  block:  (v) => `ブロック +${v}`,
-  draw:   (v) => `${v} 枚ドロー`,
+  damage:       (v) => `${v} ダメージ`,
+  block:        (v) => `ブロック +${v}`,
+  draw:         (v) => `${v} 枚ドロー`,
+  damage_block: (v) => `${v} ダメージ＆ブロック +${v}`,
+  damage_draw:  (v) => `${v} ダメージ＆1枚ドロー`,
+  damage2:      (v) => `${v}×2 ダメージ`,
 };
+
+// ゲーム中かどうか
+let isInGame = false;
 
 // ── 状態更新 ──────────────────────────────────
 function applyState(data) {
@@ -226,6 +432,8 @@ function applyState(data) {
     return;
   }
 
+  isInGame = true;
+
   // ステータス更新
   $('player-hp').textContent    = data.player_hp;
   $('player-block').textContent = data.player_block;
@@ -233,23 +441,32 @@ function applyState(data) {
   $('enemy-hp').textContent     = data.in_battle ? data.enemy_hp : '-';
   $('current-node').textContent = NODE_TYPE_JA[data.current_node_type] || data.current_node_type;
 
+  // デッキ情報
+  $('deck-info').textContent =
+    `山札: ${data.deck.length}枚 ／ 手札: ${data.hand.length}枚 ／ 捨て札: ${data.discard.length}枚`;
+
   if (data.log) setLog(data.log);
 
   // ゲームオーバー / クリア
   if (data.game_over) {
+    isInGame = false;
     showEnd(false);
     return;
   }
   if (data.game_clear) {
+    isInGame = false;
     showEnd(true);
     return;
   }
 
-  // 戦闘中
-  if (data.in_battle && data.enemy_hp > 0) {
+  // フェーズ判定
+  const phase = data.phase;
+
+  if (phase === 'reward') {
+    showReward(data);
+  } else if (data.in_battle && data.enemy_hp > 0) {
     showBattle(data);
   } else {
-    // マップ選択
     showMap(data);
   }
 }
@@ -260,16 +477,16 @@ function setLog(msg) {
 
 // ── 戦闘画面 ──────────────────────────────────
 function showBattle(data) {
-  $('battle-area').style.display = 'block';
-  $('map-area').style.display    = 'none';
+  $('battle-area').style.display  = 'block';
+  $('map-area').style.display     = 'none';
+  $('reward-area').style.display  = 'none';
 
   const handArea = $('hand-area');
   handArea.innerHTML = '';
 
   const defs = data.card_defs;
 
-  // 手札に同名カードが複数ある場合、それぞれボタンを生成
-  data.hand.forEach((cardName, idx) => {
+  data.hand.forEach((cardName) => {
     const def = defs[cardName];
     const btn = document.createElement('button');
     btn.className = 'card-btn';
@@ -292,8 +509,9 @@ function showBattle(data) {
 
 // ── マップ画面 ──────────────────────────────────
 function showMap(data) {
-  $('battle-area').style.display = 'none';
-  $('map-area').style.display    = 'block';
+  $('battle-area').style.display  = 'none';
+  $('map-area').style.display     = 'block';
+  $('reward-area').style.display  = 'none';
 
   const nodeButtons = $('node-buttons');
   nodeButtons.innerHTML = '';
@@ -310,6 +528,38 @@ function showMap(data) {
     btn.addEventListener('click', () => selectNode(node.id));
     nodeButtons.appendChild(btn);
   });
+}
+
+// ── 報酬画面 ──────────────────────────────────
+function showReward(data) {
+  $('battle-area').style.display  = 'none';
+  $('map-area').style.display     = 'none';
+  $('reward-area').style.display  = 'block';
+
+  const rewardArea = $('reward-cards');
+  rewardArea.innerHTML = '';
+
+  const defs = data.card_defs;
+  const rewards = data.reward_cards || [];
+
+  rewards.forEach(cardName => {
+    const def = defs[cardName];
+    if (!def) return;
+    const btn = document.createElement('button');
+    btn.className = 'reward-card-btn';
+    const descText = CARD_DESC[def.effect] ? CARD_DESC[def.effect](def.value) : '';
+    btn.innerHTML = `
+      <span class="card-name">${cardName}</span>
+      <span class="card-cost">コスト: ${def.cost}</span>
+      <span class="card-desc">${descText}</span>
+    `;
+    btn.addEventListener('click', () => selectReward(cardName));
+    rewardArea.appendChild(btn);
+  });
+
+  if (rewards.length === 0) {
+    rewardArea.innerHTML = '<p style="color:#aaa">報酬カードがありません</p>';
+  }
 }
 
 // ── 終了画面 ──────────────────────────────────
@@ -357,13 +607,172 @@ async function selectNode(nodeId) {
   applyState(data);
 }
 
+async function selectReward(cardName) {
+  const data = await api('POST', '/reward/select', { card: cardName });
+  applyState(data);
+}
+
+async function skipReward() {
+  // スキップ：カードを選ばずにマップへ
+  // reward_cards を空にしてフェーズをmapへ（サーバー側でスキップAPIを呼ぶ）
+  const data = await api('POST', '/reward/select', { card: '__skip__' });
+  // エラーが返ってきた場合は直接stateを取得
+  if (data.error) {
+    // スキップ用に別途対応：phaseをmapに強制移行
+    const stateData = await api('GET', '/state');
+    // 報酬フェーズのままなら最初のカードを選ぶ（フォールバック）
+    if (stateData.phase === 'reward' && stateData.reward_cards && stateData.reward_cards.length > 0) {
+      const skipData = await api('POST', '/reward/select', { card: stateData.reward_cards[0] });
+      applyState(skipData);
+    } else {
+      applyState(stateData);
+    }
+  } else {
+    applyState(data);
+  }
+}
+
+// ── セーブ / ロード ──────────────────────────────
+async function openSaveModal() {
+  $('save-modal-overlay').classList.add('active');
+  // ゲーム中かどうかでセーブ入力欄の表示切替
+  $('manual-save-section').style.display = isInGame ? 'block' : 'none';
+  await refreshSaveList();
+  await refreshAutosaveInfo();
+}
+
+function closeSaveModal() {
+  $('save-modal-overlay').classList.remove('active');
+}
+
+async function doManualSave() {
+  const name = $('save-name-input').value.trim() || 'セーブデータ';
+  const data = await api('POST', '/save', { name });
+  if (data.message) {
+    setLog(data.message);
+    await refreshSaveList();
+  }
+}
+
+async function refreshSaveList() {
+  const data = await api('GET', '/save/list');
+  const container = $('save-list-items');
+  container.innerHTML = '';
+  if (!data.saves || data.saves.length === 0) {
+    container.innerHTML = '<p style="color:#aaa;font-size:.88rem">セーブデータがありません</p>';
+    return;
+  }
+  data.saves.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'save-item';
+    item.innerHTML = `
+      <div class="save-item-info">
+        <div class="save-item-name">${escHtml(s.name)}</div>
+        <div class="save-item-meta">HP: ${s.player_hp} ／ ノード: ${NODE_TYPE_JA[s.current_node] || s.current_node} ／ ${s.created_at}</div>
+      </div>
+    `;
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'btn-load-item';
+    loadBtn.textContent = 'ロード';
+    loadBtn.addEventListener('click', () => loadSave(s.id, s.name));
+    item.appendChild(loadBtn);
+    container.appendChild(item);
+  });
+}
+
+async function refreshAutosaveInfo() {
+  const data = await api('GET', '/autosave/info');
+  const infoEl = $('autosave-item');
+  const loadBtn = $('btn-load-autosave-modal');
+  if (data.autosave) {
+    const a = data.autosave;
+    infoEl.textContent = `HP: ${a.player_hp} ／ ノード: ${NODE_TYPE_JA[a.current_node] || a.current_node} ／ ${a.updated_at}`;
+    loadBtn.style.display = 'inline-block';
+  } else {
+    infoEl.textContent = '自動セーブなし';
+    loadBtn.style.display = 'none';
+  }
+}
+
+async function loadSave(id, name) {
+  const data = await api('POST', '/load', { id });
+  closeSaveModal();
+  $('start-screen').style.display = 'none';
+  $('game-screen').style.display  = 'block';
+  $('end-screen').style.display   = 'none';
+  applyState(data);
+}
+
+async function loadAutosave() {
+  const data = await api('POST', '/autosave/load');
+  closeSaveModal();
+  $('start-screen').style.display = 'none';
+  $('game-screen').style.display  = 'block';
+  $('end-screen').style.display   = 'none';
+  applyState(data);
+}
+
+async function doAutosave() {
+  if (!isInGame) return;
+  await api('POST', '/autosave');
+}
+
+// ── スタート画面の自動セーブ情報 ──────────────────
+async function checkAutosaveOnStart() {
+  const data = await api('GET', '/autosave/info');
+  if (data.autosave) {
+    const a = data.autosave;
+    $('btn-load-autosave').style.display = 'inline-block';
+    $('autosave-info').textContent =
+      `自動セーブ: HP ${a.player_hp} ／ ${NODE_TYPE_JA[a.current_node] || a.current_node} ／ ${a.updated_at}`;
+  }
+}
+
+// ── エスケープ ──────────────────────────────────
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 // ── イベント登録 ──────────────────────────────
 $('btn-start').addEventListener('click', startGame);
 $('btn-end-turn').addEventListener('click', endTurn);
-$('btn-restart').addEventListener('click', () => {
-  $('end-screen').style.display  = 'none';
-  $('start-screen').style.display = 'flex';
+$('btn-skip-reward').addEventListener('click', skipReward);
+
+$('btn-save-quick').addEventListener('click', openSaveModal);
+$('btn-open-saves').addEventListener('click', openSaveModal);
+$('btn-close-modal').addEventListener('click', closeSaveModal);
+$('btn-do-save').addEventListener('click', doManualSave);
+$('btn-load-autosave').addEventListener('click', async () => {
+  const data = await api('POST', '/autosave/load');
+  $('start-screen').style.display = 'none';
+  $('game-screen').style.display  = 'block';
+  $('end-screen').style.display   = 'none';
+  applyState(data);
 });
+$('btn-load-autosave-modal').addEventListener('click', loadAutosave);
+
+$('btn-restart').addEventListener('click', () => {
+  isInGame = false;
+  $('end-screen').style.display   = 'none';
+  $('start-screen').style.display = 'flex';
+  checkAutosaveOnStart();
+});
+
+// モーダル外クリックで閉じる
+$('save-modal-overlay').addEventListener('click', (e) => {
+  if (e.target === $('save-modal-overlay')) closeSaveModal();
+});
+
+// ── ページ離脱時の自動セーブ ──────────────────────
+window.addEventListener('beforeunload', () => {
+  if (isInGame) {
+    // sendBeacon で非同期送信（ページ離脱時でも確実に送信）
+    navigator.sendBeacon('/autosave', new Blob(['{}'], { type: 'application/json' }));
+  }
+});
+
+// ── 初期化 ──────────────────────────────────────
+checkAutosaveOnStart();
 </script>
 </body>
 </html>
