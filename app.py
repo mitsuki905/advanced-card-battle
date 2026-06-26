@@ -32,7 +32,7 @@ def init_db():
             hand          TEXT,
             discard       TEXT,
             current_node  TEXT,
-            phase         TEXT DEFAULT 'battle',
+            game_mode     TEXT DEFAULT 'battle',
             reward_cards  TEXT DEFAULT '[]'
         )
     """)
@@ -49,7 +49,7 @@ def init_db():
             hand          TEXT,
             discard       TEXT,
             current_node  TEXT,
-            phase         TEXT DEFAULT 'battle',
+            game_mode     TEXT DEFAULT 'battle',
             reward_cards  TEXT DEFAULT '[]',
             created_at    TEXT
         )
@@ -66,19 +66,24 @@ def init_db():
             hand          TEXT,
             discard       TEXT,
             current_node  TEXT,
-            phase         TEXT DEFAULT 'battle',
+            game_mode     TEXT DEFAULT 'battle',
             reward_cards  TEXT DEFAULT '[]',
             updated_at    TEXT
         )
     """)
-    # 既存テーブルへのカラム追加（マイグレーション）
+    # マイグレーション：旧 phase カラムを game_mode として扱う
     for table in ("game_state", "save_data", "autosave"):
         try:
-            conn.execute(f"ALTER TABLE {table} ADD COLUMN phase TEXT DEFAULT 'battle'")
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN game_mode TEXT DEFAULT 'battle'")
         except Exception:
             pass
         try:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN reward_cards TEXT DEFAULT '[]'")
+        except Exception:
+            pass
+        # 旧 phase カラムのデータを game_mode へ移行
+        try:
+            conn.execute(f"UPDATE {table} SET game_mode = phase WHERE game_mode IS NULL OR game_mode = ''")
         except Exception:
             pass
     conn.commit()
@@ -89,16 +94,16 @@ def init_db():
 # カード定義
 # ─────────────────────────────────────────
 CARD_DEFS = {
-    "Strike":       {"cost": 1, "effect": "damage", "value": 6},
-    "Defend":       {"cost": 1, "effect": "block",  "value": 5},
-    "Draw":         {"cost": 1, "effect": "draw",   "value": 2},
-    "Heavy Strike": {"cost": 2, "effect": "damage", "value": 10},
-    "Bash":         {"cost": 2, "effect": "damage", "value": 8},
-    "Iron Wave":    {"cost": 1, "effect": "damage_block", "value": 5},
-    "Shrug It Off": {"cost": 1, "effect": "block",  "value": 8},
-    "Pommel Strike":{"cost": 1, "effect": "damage_draw", "value": 9},
-    "Twin Strike":  {"cost": 1, "effect": "damage2", "value": 5},
-    "Armaments":    {"cost": 1, "effect": "block",  "value": 6},
+    "Strike":        {"cost": 1, "effect": "damage",       "value": 6},
+    "Defend":        {"cost": 1, "effect": "block",         "value": 5},
+    "Draw":          {"cost": 1, "effect": "draw",          "value": 2},
+    "Heavy Strike":  {"cost": 2, "effect": "damage",        "value": 10},
+    "Bash":          {"cost": 2, "effect": "damage",        "value": 8},
+    "Iron Wave":     {"cost": 1, "effect": "damage_block",  "value": 5},
+    "Shrug It Off":  {"cost": 1, "effect": "block",         "value": 8},
+    "Pommel Strike": {"cost": 1, "effect": "damage_draw",   "value": 9},
+    "Twin Strike":   {"cost": 1, "effect": "damage2",       "value": 5},
+    "Armaments":     {"cost": 1, "effect": "block",         "value": 6},
 }
 
 INITIAL_DECK = (
@@ -118,7 +123,7 @@ REWARD_POOL = [
 # マップ定義
 # ─────────────────────────────────────────
 MAP_NODES = [
-    {"id": "n0", "type": "battle", "next": ["n1a", "n1b"]},
+    {"id": "n0",  "type": "battle", "next": ["n1a", "n1b"]},
     {"id": "n1a", "type": "battle", "next": ["n2"]},
     {"id": "n1b", "type": "elite",  "next": ["n2"]},
     {"id": "n2",  "type": "rest",   "next": ["n3"]},
@@ -137,6 +142,23 @@ ENEMY_HP_TABLE = {
 # ─────────────────────────────────────────
 # ゲーム状態ヘルパー
 # ─────────────────────────────────────────
+def _get_game_mode(row):
+    """rowから game_mode を取得（旧 phase カラムにも対応）"""
+    try:
+        val = row["game_mode"]
+        if val:
+            return val
+    except Exception:
+        pass
+    try:
+        val = row["phase"]
+        if val:
+            return val
+    except Exception:
+        pass
+    return "battle"
+
+
 def load_state():
     conn = get_db()
     row = conn.execute("SELECT * FROM game_state WHERE id=1").fetchone()
@@ -152,7 +174,7 @@ def load_state():
         "hand":         json.loads(row["hand"]),
         "discard":      json.loads(row["discard"]),
         "current_node": row["current_node"],
-        "phase":        row["phase"] if row["phase"] else "battle",
+        "game_mode":    _get_game_mode(row),
         "reward_cards": json.loads(row["reward_cards"]) if row["reward_cards"] else [],
     }
 
@@ -162,7 +184,7 @@ def save_state(state):
     conn.execute("DELETE FROM game_state WHERE id=1")
     conn.execute("""
         INSERT INTO game_state
-            (id, player_hp, enemy_hp, player_block, energy, deck, hand, discard, current_node, phase, reward_cards)
+            (id, player_hp, enemy_hp, player_block, energy, deck, hand, discard, current_node, game_mode, reward_cards)
         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         state["player_hp"],
@@ -173,7 +195,7 @@ def save_state(state):
         json.dumps(state["hand"]),
         json.dumps(state["discard"]),
         state["current_node"],
-        state.get("phase", "battle"),
+        state.get("game_mode", "battle"),
         json.dumps(state.get("reward_cards", [])),
     ))
     conn.commit()
@@ -190,7 +212,7 @@ def state_to_row(state):
         json.dumps(state["hand"]),
         json.dumps(state["discard"]),
         state["current_node"],
-        state.get("phase", "battle"),
+        state.get("game_mode", "battle"),
         json.dumps(state.get("reward_cards", [])),
     )
 
@@ -205,7 +227,7 @@ def row_to_state(row):
         "hand":         json.loads(row["hand"]),
         "discard":      json.loads(row["discard"]),
         "current_node": row["current_node"],
-        "phase":        row["phase"] if row["phase"] else "battle",
+        "game_mode":    _get_game_mode(row),
         "reward_cards": json.loads(row["reward_cards"]) if row["reward_cards"] else [],
     }
 
@@ -294,14 +316,13 @@ def start():
         "hand":         [],
         "discard":      [],
         "current_node": "n0",
-        "phase":        "battle",
+        "game_mode":    "battle",
         "reward_cards": [],
     }
     # 最初のノードが戦闘なら敵HPをセット
     node = node_info("n0")
     if node and node["type"] in ENEMY_HP_TABLE:
         state["enemy_hp"] = ENEMY_HP_TABLE[node["type"]]
-        # ターン開始処理
         state["energy"] = 3
         state["player_block"] = 0
         draw_cards(state, 5)
@@ -357,17 +378,14 @@ def use_card():
         draw_cards(state, value)
         log = f"{card_name} で {value} 枚ドロー！"
     elif effect == "damage_block":
-        # ダメージ＋ブロック両方
         state["enemy_hp"] = max(0, state["enemy_hp"] - value)
         state["player_block"] += value
         log = f"{card_name} で {value} ダメージ＆ブロック +{value}！"
     elif effect == "damage_draw":
-        # ダメージ＋ドロー
         state["enemy_hp"] = max(0, state["enemy_hp"] - value)
         draw_cards(state, 1)
         log = f"{card_name} で {value} ダメージ＆1枚ドロー！"
     elif effect == "damage2":
-        # 2回攻撃
         total = value * 2
         state["enemy_hp"] = max(0, state["enemy_hp"] - total)
         log = f"{card_name} で {value}×2 = {total} ダメージ！"
@@ -375,6 +393,17 @@ def use_card():
     # 手札から捨て札へ
     state["hand"].remove(card_name)
     state["discard"].append(card_name)
+
+    # 敵が死んでいるか確認する
+    if state["enemy_hp"] <= 0:
+        # 戦闘勝利 → 報酬フェーズへ（game_mode = "reward"）
+        reward_cards = generate_reward_cards()
+        state["game_mode"] = "reward"
+        state["reward_cards"] = reward_cards
+        save_state(state)
+        enriched = enrich_state(state)
+        enriched["log"] = log + " 敵を倒した！報酬を獲得できます。"
+        return jsonify(enriched)
 
     save_state(state)
     enriched = enrich_state(state)
@@ -413,13 +442,13 @@ def end_turn():
         return jsonify(enriched)
 
     if state["enemy_hp"] <= 0:
-        # 戦闘勝利 → 報酬フェーズへ
+        # 戦闘勝利 → 報酬フェーズへ（game_mode = "reward"）
         reward_cards = generate_reward_cards()
-        state["phase"] = "reward"
+        state["game_mode"] = "reward"
         state["reward_cards"] = reward_cards
         save_state(state)
         enriched = enrich_state(state)
-        enriched["log"] = log + " 敵を倒した！カードを選択してください。"
+        enriched["log"] = log + " 戦闘に勝利！報酬を獲得できます。"
         return jsonify(enriched)
 
     # 次のプレイヤーターン開始
@@ -441,7 +470,7 @@ def map_select():
         return jsonify({"error": "No game in progress"}), 404
 
     # 報酬フェーズ中は移動不可
-    if state.get("phase") == "reward":
+    if state.get("game_mode") == "reward":
         return jsonify({"error": "Please select a reward card first"}), 400
 
     # 現在ノードの敵が生きていたら移動不可
@@ -462,7 +491,7 @@ def map_select():
         state["player_hp"] = min(50, state["player_hp"] + 15)
         log = "休憩！HP +15 回復。"
         state["enemy_hp"] = 0
-        state["phase"] = "map"
+        state["game_mode"] = "map"
     elif node["type"] in ENEMY_HP_TABLE:
         state["enemy_hp"] = ENEMY_HP_TABLE[node["type"]]
         state["energy"] = 3
@@ -470,7 +499,7 @@ def map_select():
         state["discard"].extend(state["hand"])
         state["hand"] = []
         draw_cards(state, 5)
-        state["phase"] = "battle"
+        state["game_mode"] = "battle"
         log = f"{node['type']} との戦闘開始！"
 
     state["reward_cards"] = []
@@ -491,12 +520,12 @@ def reward_select():
     if state is None:
         return jsonify({"error": "No game in progress"}), 404
 
-    if state.get("phase") != "reward":
+    if state.get("game_mode") != "reward":
         return jsonify({"error": "Not in reward phase"}), 400
 
     # スキップ対応
     if card_name == "__skip__":
-        state["phase"] = "map"
+        state["game_mode"] = "map"
         state["reward_cards"] = []
         save_state(state)
         enriched = enrich_state(state)
@@ -508,7 +537,7 @@ def reward_select():
 
     # カードをデッキに追加
     state["deck"].append(card_name)
-    state["phase"] = "map"
+    state["game_mode"] = "map"
     state["reward_cards"] = []
 
     save_state(state)
@@ -532,7 +561,7 @@ def manual_save():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn.execute("""
         INSERT INTO save_data
-            (name, player_hp, enemy_hp, player_block, energy, deck, hand, discard, current_node, phase, reward_cards, created_at)
+            (name, player_hp, enemy_hp, player_block, energy, deck, hand, discard, current_node, game_mode, reward_cards, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (save_name,) + state_to_row(state) + (now,))
     conn.commit()
@@ -578,7 +607,7 @@ def autosave():
     conn.execute("DELETE FROM autosave WHERE id=1")
     conn.execute("""
         INSERT INTO autosave
-            (id, player_hp, enemy_hp, player_block, energy, deck, hand, discard, current_node, phase, reward_cards, updated_at)
+            (id, player_hp, enemy_hp, player_block, energy, deck, hand, discard, current_node, game_mode, reward_cards, updated_at)
         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, state_to_row(state) + (now,))
     conn.commit()

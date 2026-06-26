@@ -5,49 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>カードバトルゲーム</title>
   <style>
+    /* ── Google Fonts ── */
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Sans+JP:wght@400;700&display=swap');
+
     /* ── リセット & ベース ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #1a1a2e;
-      color: #eee;
+      font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+      background: #0d0d1a;
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(90, 20, 120, 0.25) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(20, 40, 100, 0.3) 0%, transparent 60%),
+        linear-gradient(180deg, #0d0d1a 0%, #111128 50%, #0a0a18 100%);
+      color: #e8e0d0;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
+      padding: 28px 20px;
     }
-    h1 { font-size: 2rem; margin-bottom: 16px; color: #e94560; letter-spacing: 2px; }
+
+    h1 {
+      font-family: 'Cinzel', 'Segoe UI', serif;
+      font-size: 2.4rem;
+      margin-bottom: 20px;
+      color: #e94560;
+      letter-spacing: 4px;
+      text-shadow:
+        0 0 12px rgba(233, 69, 96, 0.7),
+        0 0 30px rgba(233, 69, 96, 0.3);
+    }
 
     /* ── ボタン共通 ── */
     button {
       cursor: pointer;
       border: none;
-      border-radius: 6px;
-      padding: 10px 20px;
+      border-radius: 8px;
+      padding: 10px 22px;
       font-size: 1rem;
-      transition: opacity .2s, transform .1s;
+      font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+      font-weight: 700;
+      transition: opacity .2s, transform .12s, box-shadow .2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      letter-spacing: 0.5px;
     }
-    button:hover { opacity: .85; }
-    button:active { transform: scale(.97); }
-    button:disabled { opacity: .4; cursor: not-allowed; }
+    button:hover:not(:disabled) {
+      opacity: .9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+    button:active:not(:disabled) {
+      transform: translateY(2px) scale(.97);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+    button:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
 
     /* ── スタート画面 ── */
     #start-screen {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
+      gap: 20px;
       margin-top: 60px;
       width: 100%;
-      max-width: 500px;
+      max-width: 520px;
+      padding: 40px 32px;
+      background: rgba(22, 33, 62, 0.6);
+      border: 1px solid rgba(79, 195, 247, 0.2);
+      border-radius: 16px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
     }
-    #start-screen p { color: #aaa; font-size: 1rem; }
+    #start-screen p { color: #9ab; font-size: 1rem; letter-spacing: 1px; }
     #btn-start {
-      background: #e94560;
+      background: linear-gradient(135deg, #e94560, #c0304a);
       color: #fff;
-      font-size: 1.4rem;
-      padding: 14px 40px;
+      font-size: 1.5rem;
+      padding: 16px 48px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(233, 69, 96, 0.5);
+      letter-spacing: 2px;
+    }
+    #btn-start:hover:not(:disabled) {
+      box-shadow: 0 6px 28px rgba(233, 69, 96, 0.75);
     }
     #start-actions {
       display: flex;
@@ -56,14 +96,14 @@
       justify-content: center;
     }
     #btn-load-autosave {
-      background: #4fc3f7;
-      color: #000;
+      background: linear-gradient(135deg, #4fc3f7, #0288d1);
+      color: #fff;
       font-size: 1rem;
     }
     #btn-open-saves {
-      background: #0f3460;
+      background: rgba(15, 52, 96, 0.8);
       color: #eee;
-      border: 1px solid #4fc3f7;
+      border: 1px solid rgba(79, 195, 247, 0.5);
       font-size: 1rem;
     }
     #autosave-info {
@@ -73,46 +113,54 @@
     }
 
     /* ── ゲーム画面 ── */
-    #game-screen { display: none; width: 100%; max-width: 900px; }
+    #game-screen { display: none; width: 100%; max-width: 960px; }
 
     /* ── ステータスバー ── */
     #status-bar {
       display: flex;
-      gap: 24px;
-      background: #16213e;
-      border-radius: 10px;
-      padding: 14px 20px;
-      margin-bottom: 16px;
+      gap: 20px;
+      background: rgba(16, 24, 48, 0.85);
+      border: 1px solid rgba(79, 195, 247, 0.2);
+      border-radius: 14px;
+      padding: 16px 24px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
       align-items: center;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
     }
-    .stat { display: flex; flex-direction: column; align-items: center; }
-    .stat-label { font-size: .75rem; color: #aaa; margin-bottom: 4px; }
-    .stat-value { font-size: 1.4rem; font-weight: bold; }
-    .hp    { color: #e94560; }
-    .block { color: #4fc3f7; }
-    .energy{ color: #ffd54f; }
-    .enemy-hp { color: #ef9a9a; }
+    .stat { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
+    .stat-label { font-size: .72rem; color: #7a8fa8; margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .stat-value { font-size: 1.6rem; font-weight: bold; line-height: 1; }
+    .hp     { color: #ff4d6d; text-shadow: 0 0 10px rgba(255, 77, 109, 0.6); }
+    .block  { color: #4fc3f7; text-shadow: 0 0 10px rgba(79, 195, 247, 0.5); }
+    .energy { color: #ffd54f; text-shadow: 0 0 10px rgba(255, 213, 79, 0.6); }
+    .enemy-hp { color: #ef9a9a; text-shadow: 0 0 8px rgba(239, 154, 154, 0.4); }
 
     /* セーブボタン（ステータスバー内） */
     #btn-save-quick {
-      background: #0f3460;
+      background: rgba(15, 52, 96, 0.8);
       color: #eee;
-      border: 1px solid #4fc3f7;
+      border: 1px solid rgba(79, 195, 247, 0.4);
       font-size: .85rem;
-      padding: 6px 14px;
+      padding: 8px 16px;
       margin-left: auto;
     }
 
     /* ── ログ ── */
     #log-box {
-      background: #0f3460;
-      border-radius: 8px;
-      padding: 10px 16px;
-      margin-bottom: 16px;
-      min-height: 44px;
+      background: rgba(10, 20, 50, 0.7);
+      border: 1px solid rgba(79, 195, 247, 0.15);
+      border-left: 3px solid rgba(79, 195, 247, 0.5);
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      min-height: 48px;
       font-size: .95rem;
       color: #b2dfdb;
+      backdrop-filter: blur(4px);
+      box-shadow: inset 0 1px 8px rgba(0,0,0,0.3);
+      line-height: 1.5;
     }
 
     /* ── 戦闘エリア ── */
@@ -120,78 +168,232 @@
     #hand-area {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding: 8px 0;
     }
+
+    /* ── カード ── */
     .card-btn {
-      background: #0f3460;
-      color: #eee;
-      border: 2px solid #4fc3f7;
-      border-radius: 10px;
-      padding: 12px 16px;
-      min-width: 120px;
+      background: linear-gradient(160deg, #1a2a5e 0%, #0f1e48 100%);
+      color: #e8e0d0;
+      border: 2px solid rgba(79, 195, 247, 0.5);
+      border-radius: 14px;
+      padding: 18px 20px;
+      min-width: 140px;
+      max-width: 160px;
       text-align: center;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 8px;
+      cursor: pointer;
+      transition:
+        transform .2s cubic-bezier(.34,1.56,.64,1),
+        box-shadow .2s,
+        border-color .2s,
+        background .2s;
+      box-shadow:
+        0 4px 16px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      position: relative;
+      overflow: hidden;
     }
-    .card-btn .card-name { font-weight: bold; font-size: 1rem; }
-    .card-btn .card-cost { font-size: .8rem; color: #ffd54f; }
-    .card-btn .card-desc { font-size: .78rem; color: #b2dfdb; }
-    .card-btn:hover:not(:disabled) { background: #1a4a7a; border-color: #80deea; }
+    .card-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(79,195,247,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .card-btn:hover:not(:disabled) {
+      transform: translateY(-10px) scale(1.06);
+      border-color: #80deea;
+      box-shadow:
+        0 12px 32px rgba(0,0,0,0.6),
+        0 0 20px rgba(79, 195, 247, 0.35),
+        0 0 40px rgba(79, 195, 247, 0.15),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+      background: linear-gradient(160deg, #1e3470 0%, #142560 100%);
+    }
+    .card-btn:active:not(:disabled) {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+    }
+    .card-btn:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+      border-color: rgba(79, 195, 247, 0.2);
+    }
+    .card-btn .card-name {
+      font-weight: bold;
+      font-size: 1.05rem;
+      color: #e8e0d0;
+      letter-spacing: 0.5px;
+    }
+    .card-btn .card-cost {
+      font-size: .82rem;
+      color: #ffd54f;
+      font-weight: bold;
+      text-shadow: 0 0 6px rgba(255, 213, 79, 0.5);
+    }
+    .card-btn .card-desc {
+      font-size: .8rem;
+      color: #9ecfdb;
+      line-height: 1.4;
+    }
 
     #btn-end-turn {
-      background: #e94560;
+      background: linear-gradient(135deg, #e94560, #c0304a);
       color: #fff;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      padding: 12px 32px;
+      font-size: 1.05rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(233, 69, 96, 0.4);
+      letter-spacing: 1px;
+    }
+    #btn-end-turn:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(233, 69, 96, 0.65);
     }
 
     /* ── マップエリア ── */
     #map-area { display: none; }
-    #map-area h2 { margin-bottom: 12px; color: #ffd54f; }
-    #node-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
-    .node-btn {
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 1rem;
-      color: #fff;
+    #map-area h2 {
+      margin-bottom: 20px;
+      color: #ffd54f;
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(255, 213, 79, 0.4);
     }
-    .node-btn.battle { background: #c62828; }
-    .node-btn.elite  { background: #6a1b9a; }
-    .node-btn.rest   { background: #2e7d32; }
-    .node-btn.boss   { background: #bf360c; }
+    #node-buttons { display: flex; gap: 16px; flex-wrap: wrap; }
+    .node-btn {
+      padding: 16px 32px;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      color: #fff;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .node-btn.battle {
+      background: linear-gradient(135deg, #c62828, #8b0000);
+      box-shadow: 0 4px 16px rgba(198, 40, 40, 0.4);
+    }
+    .node-btn.battle:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(198, 40, 40, 0.65);
+    }
+    .node-btn.elite {
+      background: linear-gradient(135deg, #7b1fa2, #4a0072);
+      box-shadow: 0 4px 16px rgba(123, 31, 162, 0.4);
+    }
+    .node-btn.elite:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(123, 31, 162, 0.65);
+    }
+    .node-btn.rest {
+      background: linear-gradient(135deg, #2e7d32, #1b5e20);
+      box-shadow: 0 4px 16px rgba(46, 125, 50, 0.4);
+    }
+    .node-btn.rest:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(46, 125, 50, 0.65);
+    }
+    .node-btn.boss {
+      background: linear-gradient(135deg, #e65100, #bf360c);
+      box-shadow: 0 4px 16px rgba(230, 81, 0, 0.4);
+    }
+    .node-btn.boss:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(230, 81, 0, 0.65);
+    }
 
     /* ── 報酬エリア ── */
     #reward-area { display: none; }
-    #reward-area h2 { margin-bottom: 12px; color: #ffd54f; }
+    #reward-area h2 {
+      margin-bottom: 8px;
+      color: #ffd54f;
+      font-size: 1.4rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 12px rgba(255, 213, 79, 0.5);
+    }
+    #reward-area .reward-subtitle {
+      color: #9ecfdb;
+      font-size: .95rem;
+      margin-bottom: 24px;
+    }
     #reward-cards {
       display: flex;
-      gap: 16px;
+      gap: 20px;
       flex-wrap: wrap;
-      margin-bottom: 16px;
+      margin-bottom: 24px;
     }
     .reward-card-btn {
-      background: #1a1a4e;
-      color: #eee;
-      border: 2px solid #ffd54f;
-      border-radius: 12px;
-      padding: 16px 20px;
-      min-width: 140px;
+      background: linear-gradient(160deg, #1a1a5e 0%, #12124a 100%);
+      color: #e8e0d0;
+      border: 2px solid rgba(255, 213, 79, 0.5);
+      border-radius: 14px;
+      padding: 20px 24px;
+      min-width: 150px;
+      max-width: 180px;
       text-align: center;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       cursor: pointer;
-      transition: background .2s, border-color .2s;
+      transition:
+        transform .2s cubic-bezier(.34,1.56,.64,1),
+        box-shadow .2s,
+        border-color .2s,
+        background .2s;
+      box-shadow:
+        0 4px 16px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      position: relative;
+      overflow: hidden;
     }
-    .reward-card-btn:hover { background: #2a2a6e; border-color: #fff176; }
-    .reward-card-btn .card-name { font-weight: bold; font-size: 1.05rem; color: #ffd54f; }
-    .reward-card-btn .card-cost { font-size: .82rem; color: #aaa; }
-    .reward-card-btn .card-desc { font-size: .82rem; color: #b2dfdb; }
+    .reward-card-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,213,79,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .reward-card-btn:hover {
+      transform: translateY(-10px) scale(1.06);
+      background: linear-gradient(160deg, #22226e 0%, #1a1a5a 100%);
+      border-color: #fff176;
+      box-shadow:
+        0 12px 32px rgba(0,0,0,0.6),
+        0 0 20px rgba(255, 213, 79, 0.35),
+        0 0 40px rgba(255, 213, 79, 0.15);
+    }
+    .reward-card-btn .card-name {
+      font-weight: bold;
+      font-size: 1.08rem;
+      color: #ffd54f;
+      text-shadow: 0 0 8px rgba(255, 213, 79, 0.4);
+    }
+    .reward-card-btn .card-cost { font-size: .82rem; color: #9ab; }
+    .reward-card-btn .card-desc { font-size: .82rem; color: #9ecfdb; line-height: 1.4; }
+
+    #btn-next-reward {
+      background: linear-gradient(135deg, #4fc3f7, #0288d1);
+      color: #fff;
+      font-size: 1rem;
+      padding: 12px 32px;
+      border-radius: 10px;
+      box-shadow: 0 4px 14px rgba(79, 195, 247, 0.4);
+    }
+    #btn-next-reward:hover:not(:disabled) {
+      box-shadow: 0 6px 22px rgba(79, 195, 247, 0.6);
+    }
     #btn-skip-reward {
-      background: #555;
-      color: #eee;
+      background: rgba(60, 60, 80, 0.8);
+      color: #ccc;
       font-size: .9rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .reward-actions {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
     /* ── セーブ/ロード モーダル ── */
@@ -199,78 +401,100 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.7);
+      background: rgba(0,0,0,.75);
+      backdrop-filter: blur(4px);
       z-index: 100;
       align-items: center;
       justify-content: center;
     }
     #save-modal-overlay.active { display: flex; }
     #save-modal {
-      background: #16213e;
-      border-radius: 12px;
-      padding: 28px;
+      background: linear-gradient(160deg, #16213e 0%, #0f1a30 100%);
+      border: 1px solid rgba(79, 195, 247, 0.25);
+      border-radius: 16px;
+      padding: 32px;
       width: 90%;
-      max-width: 520px;
+      max-width: 540px;
       max-height: 80vh;
       overflow-y: auto;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.7);
     }
-    #save-modal h2 { color: #ffd54f; margin-bottom: 16px; }
+    #save-modal h2 {
+      color: #ffd54f;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(255, 213, 79, 0.4);
+    }
     #save-name-input {
       width: 100%;
-      padding: 8px 12px;
-      border-radius: 6px;
-      border: 1px solid #4fc3f7;
-      background: #0f3460;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(79, 195, 247, 0.4);
+      background: rgba(15, 52, 96, 0.7);
       color: #eee;
       font-size: 1rem;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    #save-name-input:focus {
+      border-color: #4fc3f7;
+      box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.15);
     }
     #btn-do-save {
-      background: #e94560;
+      background: linear-gradient(135deg, #e94560, #c0304a);
       color: #fff;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 14px rgba(233, 69, 96, 0.4);
     }
-    #save-list-area h3 { color: #80deea; margin-bottom: 10px; font-size: 1rem; }
+    #save-list-area h3 { color: #80deea; margin-bottom: 12px; font-size: 1rem; letter-spacing: 1px; }
     .save-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: #0f3460;
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 8px;
+      gap: 12px;
+      background: rgba(15, 52, 96, 0.6);
+      border: 1px solid rgba(79, 195, 247, 0.15);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      transition: background .2s;
     }
+    .save-item:hover { background: rgba(15, 52, 96, 0.85); }
     .save-item-info { flex: 1; }
-    .save-item-name { font-weight: bold; font-size: .95rem; }
-    .save-item-meta { font-size: .78rem; color: #aaa; }
+    .save-item-name { font-weight: bold; font-size: .95rem; color: #e8e0d0; }
+    .save-item-meta { font-size: .78rem; color: #7a8fa8; margin-top: 3px; }
     .btn-load-item {
-      background: #4fc3f7;
-      color: #000;
+      background: linear-gradient(135deg, #4fc3f7, #0288d1);
+      color: #fff;
       font-size: .85rem;
-      padding: 6px 14px;
+      padding: 7px 16px;
+      border-radius: 7px;
     }
     #btn-close-modal {
-      background: #555;
-      color: #eee;
-      margin-top: 12px;
+      background: rgba(60, 60, 80, 0.8);
+      color: #ccc;
+      margin-top: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
     }
     #autosave-section {
-      border-top: 1px solid #333;
-      padding-top: 16px;
-      margin-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 20px;
+      margin-top: 20px;
     }
-    #autosave-section h3 { color: #80deea; margin-bottom: 10px; font-size: 1rem; }
+    #autosave-section h3 { color: #80deea; margin-bottom: 12px; font-size: 1rem; letter-spacing: 1px; }
     #autosave-item {
-      background: #0f3460;
+      background: rgba(15, 52, 96, 0.6);
+      border: 1px solid rgba(79, 195, 247, 0.15);
       border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 10px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
       font-size: .88rem;
-      color: #b2dfdb;
+      color: #9ecfdb;
     }
     #btn-load-autosave-modal {
-      background: #4fc3f7;
-      color: #000;
+      background: linear-gradient(135deg, #4fc3f7, #0288d1);
+      color: #fff;
       font-size: .9rem;
     }
 
@@ -279,23 +503,55 @@
       display: none;
       flex-direction: column;
       align-items: center;
-      gap: 20px;
+      gap: 24px;
       margin-top: 60px;
+      padding: 48px 40px;
+      background: rgba(22, 33, 62, 0.6);
+      border: 1px solid rgba(79, 195, 247, 0.2);
+      border-radius: 16px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
     }
-    #end-message { font-size: 2rem; font-weight: bold; }
-    .clear { color: #ffd54f; }
-    .over  { color: #e94560; }
-    #btn-restart { background: #4fc3f7; color: #000; font-size: 1.1rem; }
+    #end-message { font-size: 2.2rem; font-weight: bold; letter-spacing: 3px; }
+    .clear {
+      color: #ffd54f;
+      text-shadow: 0 0 20px rgba(255, 213, 79, 0.6), 0 0 40px rgba(255, 213, 79, 0.3);
+    }
+    .over {
+      color: #e94560;
+      text-shadow: 0 0 20px rgba(233, 69, 96, 0.6), 0 0 40px rgba(233, 69, 96, 0.3);
+    }
+    #btn-restart {
+      background: linear-gradient(135deg, #4fc3f7, #0288d1);
+      color: #fff;
+      font-size: 1.1rem;
+      padding: 14px 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(79, 195, 247, 0.4);
+    }
+    #btn-restart:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(79, 195, 247, 0.65);
+    }
 
     /* ── ノードタイプ日本語 ── */
-    .type-label { font-size: .8rem; color: #aaa; margin-bottom: 8px; }
+    .type-label { font-size: .8rem; color: #7a8fa8; margin-bottom: 8px; }
 
     /* ── デッキ枚数表示 ── */
     #deck-info {
       font-size: .82rem;
-      color: #aaa;
-      margin-bottom: 8px;
+      color: #7a8fa8;
+      margin-bottom: 12px;
+      padding: 6px 12px;
+      background: rgba(10, 20, 50, 0.5);
+      border-radius: 6px;
+      display: inline-block;
     }
+
+    /* ── スクロールバー ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(79, 195, 247, 0.3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(79, 195, 247, 0.5); }
   </style>
 </head>
 <body>
@@ -361,9 +617,13 @@
 
   <!-- 報酬エリア -->
   <div id="reward-area">
-    <h2>🎁 カードを選択してデッキに追加</h2>
+    <h2>🎉 戦闘に勝利！</h2>
+    <p class="reward-subtitle">報酬を獲得できます</p>
     <div id="reward-cards"></div>
-    <button id="btn-skip-reward">スキップ（カードを取らない）</button>
+    <div class="reward-actions">
+      <button id="btn-next-reward">次へ</button>
+      <button id="btn-skip-reward">スキップ（カードを取らない）</button>
+    </div>
   </div>
 
 </div>
@@ -459,10 +719,10 @@ function applyState(data) {
     return;
   }
 
-  // フェーズ判定
-  const phase = data.phase;
+  // game_mode による画面制御
+  const gameMode = data.game_mode;
 
-  if (phase === 'reward') {
+  if (gameMode === 'reward') {
     showReward(data);
   } else if (data.in_battle && data.enemy_hp > 0) {
     showBattle(data);
@@ -503,7 +763,7 @@ function showBattle(data) {
   });
 
   if (data.hand.length === 0) {
-    handArea.innerHTML = '<p style="color:#aaa">手札がありません</p>';
+    handArea.innerHTML = '<p style="color:#7a8fa8">手札がありません</p>';
   }
 }
 
@@ -517,7 +777,7 @@ function showMap(data) {
   nodeButtons.innerHTML = '';
 
   if (data.next_nodes.length === 0) {
-    nodeButtons.innerHTML = '<p style="color:#aaa">次のノードはありません</p>';
+    nodeButtons.innerHTML = '<p style="color:#7a8fa8">次のノードはありません</p>';
     return;
   }
 
@@ -558,7 +818,7 @@ function showReward(data) {
   });
 
   if (rewards.length === 0) {
-    rewardArea.innerHTML = '<p style="color:#aaa">報酬カードがありません</p>';
+    rewardArea.innerHTML = '<p style="color:#7a8fa8">報酬カードがありません</p>';
   }
 }
 
@@ -612,24 +872,15 @@ async function selectReward(cardName) {
   applyState(data);
 }
 
-async function skipReward() {
-  // スキップ：カードを選ばずにマップへ
-  // reward_cards を空にしてフェーズをmapへ（サーバー側でスキップAPIを呼ぶ）
+async function nextReward() {
+  // 「次へ」ボタン：カードを選ばずにマップへ（スキップ扱い）
   const data = await api('POST', '/reward/select', { card: '__skip__' });
-  // エラーが返ってきた場合は直接stateを取得
-  if (data.error) {
-    // スキップ用に別途対応：phaseをmapに強制移行
-    const stateData = await api('GET', '/state');
-    // 報酬フェーズのままなら最初のカードを選ぶ（フォールバック）
-    if (stateData.phase === 'reward' && stateData.reward_cards && stateData.reward_cards.length > 0) {
-      const skipData = await api('POST', '/reward/select', { card: stateData.reward_cards[0] });
-      applyState(skipData);
-    } else {
-      applyState(stateData);
-    }
-  } else {
-    applyState(data);
-  }
+  applyState(data);
+}
+
+async function skipReward() {
+  const data = await api('POST', '/reward/select', { card: '__skip__' });
+  applyState(data);
 }
 
 // ── セーブ / ロード ──────────────────────────────
@@ -659,7 +910,7 @@ async function refreshSaveList() {
   const container = $('save-list-items');
   container.innerHTML = '';
   if (!data.saves || data.saves.length === 0) {
-    container.innerHTML = '<p style="color:#aaa;font-size:.88rem">セーブデータがありません</p>';
+    container.innerHTML = '<p style="color:#7a8fa8;font-size:.88rem">セーブデータがありません</p>';
     return;
   }
   data.saves.forEach(s => {
@@ -736,6 +987,7 @@ function escHtml(str) {
 // ── イベント登録 ──────────────────────────────
 $('btn-start').addEventListener('click', startGame);
 $('btn-end-turn').addEventListener('click', endTurn);
+$('btn-next-reward').addEventListener('click', nextReward);
 $('btn-skip-reward').addEventListener('click', skipReward);
 
 $('btn-save-quick').addEventListener('click', openSaveModal);
