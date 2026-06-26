@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>カードバトルゲーム</title>
+  <style>
+    /* ── リセット & ベース ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 { font-size: 2rem; margin-bottom: 16px; color: #e94560; letter-spacing: 2px; }
+
+    /* ── ボタン共通 ── */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      transition: opacity .2s, transform .1s;
+    }
+    button:hover { opacity: .85; }
+    button:active { transform: scale(.97); }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── スタート画面 ── */
+    #start-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-top: 80px;
+    }
+    #btn-start {
+      background: #e94560;
+      color: #fff;
+      font-size: 1.4rem;
+      padding: 14px 40px;
+    }
+
+    /* ── ゲーム画面 ── */
+    #game-screen { display: none; width: 100%; max-width: 900px; }
+
+    /* ── ステータスバー ── */
+    #status-bar {
+      display: flex;
+      gap: 24px;
+      background: #16213e;
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .stat { display: flex; flex-direction: column; align-items: center; }
+    .stat-label { font-size: .75rem; color: #aaa; margin-bottom: 4px; }
+    .stat-value { font-size: 1.4rem; font-weight: bold; }
+    .hp    { color: #e94560; }
+    .block { color: #4fc3f7; }
+    .energy{ color: #ffd54f; }
+    .enemy-hp { color: #ef9a9a; }
+
+    /* ── ログ ── */
+    #log-box {
+      background: #0f3460;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+      min-height: 44px;
+      font-size: .95rem;
+      color: #b2dfdb;
+    }
+
+    /* ── 戦闘エリア ── */
+    #battle-area { display: none; }
+    #hand-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .card-btn {
+      background: #0f3460;
+      color: #eee;
+      border: 2px solid #4fc3f7;
+      border-radius: 10px;
+      padding: 12px 16px;
+      min-width: 110px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .card-btn .card-name { font-weight: bold; font-size: 1rem; }
+    .card-btn .card-cost { font-size: .8rem; color: #ffd54f; }
+    .card-btn .card-desc { font-size: .78rem; color: #b2dfdb; }
+    .card-btn:hover:not(:disabled) { background: #1a4a7a; border-color: #80deea; }
+
+    #btn-end-turn {
+      background: #e94560;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    /* ── マップエリア ── */
+    #map-area { display: none; }
+    #map-area h2 { margin-bottom: 12px; color: #ffd54f; }
+    #node-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+    .node-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #fff;
+    }
+    .node-btn.battle { background: #c62828; }
+    .node-btn.elite  { background: #6a1b9a; }
+    .node-btn.rest   { background: #2e7d32; }
+    .node-btn.boss   { background: #bf360c; }
+
+    /* ── 終了画面 ── */
+    #end-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      margin-top: 60px;
+    }
+    #end-message { font-size: 2rem; font-weight: bold; }
+    .clear { color: #ffd54f; }
+    .over  { color: #e94560; }
+    #btn-restart { background: #4fc3f7; color: #000; font-size: 1.1rem; }
+
+    /* ── ノードタイプ日本語 ── */
+    .type-label { font-size: .8rem; color: #aaa; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+<h1>⚔ カードバトル</h1>
+
+<!-- スタート画面 -->
+<div id="start-screen">
+  <p>Slay the Spire 風ターン制カードバトルゲーム</p>
+  <button id="btn-start">ゲームスタート</button>
+</div>
+
+<!-- ゲーム画面 -->
+<div id="game-screen">
+
+  <!-- ステータスバー -->
+  <div id="status-bar">
+    <div class="stat">
+      <span class="stat-label">プレイヤー HP</span>
+      <span class="stat-value hp" id="player-hp">50</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">ブロック</span>
+      <span class="stat-value block" id="player-block">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">エネルギー</span>
+      <span class="stat-value energy" id="energy">3</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">敵 HP</span>
+      <span class="stat-value enemy-hp" id="enemy-hp">-</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">現在ノード</span>
+      <span class="stat-value" id="current-node">-</span>
+    </div>
+  </div>
+
+  <!-- ログ -->
+  <div id="log-box">ゲームを開始しました。</div>
+
+  <!-- 戦闘エリア -->
+  <div id="battle-area">
+    <div id="hand-area"></div>
+    <button id="btn-end-turn">ターン終了</button>
+  </div>
+
+  <!-- マップエリア -->
+  <div id="map-area">
+    <h2>🗺 マップ — 次のノードを選択</h2>
+    <div id="node-buttons"></div>
+  </div>
+
+</div>
+
+<!-- 終了画面 -->
+<div id="end-screen">
+  <div id="end-message"></div>
+  <button id="btn-restart">もう一度プレイ</button>
+</div>
+
+<script>
+// ── ユーティリティ ──────────────────────────────
+const $ = id => document.getElementById(id);
+
+const NODE_TYPE_JA = {
+  battle: '通常敵',
+  elite:  '強敵',
+  rest:   '休憩',
+  boss:   'ボス',
+};
+
+const CARD_DESC = {
+  damage: (v) => `${v} ダメージ`,
+  block:  (v) => `ブロック +${v}`,
+  draw:   (v) => `${v} 枚ドロー`,
+};
+
+// ── 状態更新 ──────────────────────────────────
+function applyState(data) {
+  if (data.error) {
+    setLog('⚠ ' + data.error);
+    return;
+  }
+
+  // ステータス更新
+  $('player-hp').textContent    = data.player_hp;
+  $('player-block').textContent = data.player_block;
+  $('energy').textContent       = data.energy;
+  $('enemy-hp').textContent     = data.in_battle ? data.enemy_hp : '-';
+  $('current-node').textContent = NODE_TYPE_JA[data.current_node_type] || data.current_node_type;
+
+  if (data.log) setLog(data.log);
+
+  // ゲームオーバー / クリア
+  if (data.game_over) {
+    showEnd(false);
+    return;
+  }
+  if (data.game_clear) {
+    showEnd(true);
+    return;
+  }
+
+  // 戦闘中
+  if (data.in_battle && data.enemy_hp > 0) {
+    showBattle(data);
+  } else {
+    // マップ選択
+    showMap(data);
+  }
+}
+
+function setLog(msg) {
+  $('log-box').textContent = msg;
+}
+
+// ── 戦闘画面 ──────────────────────────────────
+function showBattle(data) {
+  $('battle-area').style.display = 'block';
+  $('map-area').style.display    = 'none';
+
+  const handArea = $('hand-area');
+  handArea.innerHTML = '';
+
+  const defs = data.card_defs;
+
+  // 手札に同名カードが複数ある場合、それぞれボタンを生成
+  data.hand.forEach((cardName, idx) => {
+    const def = defs[cardName];
+    const btn = document.createElement('button');
+    btn.className = 'card-btn';
+    btn.disabled  = def.cost > data.energy;
+
+    const descText = CARD_DESC[def.effect] ? CARD_DESC[def.effect](def.value) : '';
+    btn.innerHTML = `
+      <span class="card-name">${cardName}</span>
+      <span class="card-cost">コスト: ${def.cost}</span>
+      <span class="card-desc">${descText}</span>
+    `;
+    btn.addEventListener('click', () => useCard(cardName));
+    handArea.appendChild(btn);
+  });
+
+  if (data.hand.length === 0) {
+    handArea.innerHTML = '<p style="color:#aaa">手札がありません</p>';
+  }
+}
+
+// ── マップ画面 ──────────────────────────────────
+function showMap(data) {
+  $('battle-area').style.display = 'none';
+  $('map-area').style.display    = 'block';
+
+  const nodeButtons = $('node-buttons');
+  nodeButtons.innerHTML = '';
+
+  if (data.next_nodes.length === 0) {
+    nodeButtons.innerHTML = '<p style="color:#aaa">次のノードはありません</p>';
+    return;
+  }
+
+  data.next_nodes.forEach(node => {
+    const btn = document.createElement('button');
+    btn.className = `node-btn ${node.type}`;
+    btn.textContent = NODE_TYPE_JA[node.type] || node.type;
+    btn.addEventListener('click', () => selectNode(node.id));
+    nodeButtons.appendChild(btn);
+  });
+}
+
+// ── 終了画面 ──────────────────────────────────
+function showEnd(isWin) {
+  $('game-screen').style.display  = 'none';
+  $('end-screen').style.display   = 'flex';
+  const msg = $('end-message');
+  if (isWin) {
+    msg.textContent = '🎉 ゲームクリア！';
+    msg.className   = 'clear';
+  } else {
+    msg.textContent = '💀 ゲームオーバー...';
+    msg.className   = 'over';
+  }
+}
+
+// ── API 呼び出し ──────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res  = await fetch(path, opts);
+  return res.json();
+}
+
+async function startGame() {
+  $('start-screen').style.display = 'none';
+  $('game-screen').style.display  = 'block';
+  $('end-screen').style.display   = 'none';
+  const data = await api('POST', '/start');
+  applyState(data);
+}
+
+async function useCard(cardName) {
+  const data = await api('POST', '/action/card', { card: cardName });
+  applyState(data);
+}
+
+async function endTurn() {
+  const data = await api('POST', '/action/end_turn');
+  applyState(data);
+}
+
+async function selectNode(nodeId) {
+  const data = await api('POST', '/map/select', { node_id: nodeId });
+  applyState(data);
+}
+
+// ── イベント登録 ──────────────────────────────
+$('btn-start').addEventListener('click', startGame);
+$('btn-end-turn').addEventListener('click', endTurn);
+$('btn-restart').addEventListener('click', () => {
+  $('end-screen').style.display  = 'none';
+  $('start-screen').style.display = 'flex';
+});
+</script>
+</body>
+</html>
