@@ -115,36 +115,116 @@
     /* ── ゲーム画面 ── */
     #game-screen { display: none; width: 100%; max-width: 960px; }
 
-    /* ── ステータスバー ── */
+    /* ── ステータスバー（新しいカード風レイアウト） ── */
     #status-bar {
       display: flex;
-      gap: 20px;
-      background: rgba(16, 24, 48, 0.85);
-      border: 1px solid rgba(79, 195, 247, 0.2);
-      border-radius: 14px;
-      padding: 16px 24px;
-      margin-bottom: 20px;
+      gap: 24px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      margin-bottom: 24px;
+      align-items: stretch;
+      justify-content: space-between;
+      backdrop-filter: none;
+      box-shadow: none;
       flex-wrap: wrap;
-      align-items: center;
-      backdrop-filter: blur(6px);
-      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
     }
-    .stat { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
-    .stat-label { font-size: .72rem; color: #7a8fa8; margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
-    .stat-value { font-size: 1.6rem; font-weight: bold; line-height: 1; }
-    .hp     { color: #ff4d6d; text-shadow: 0 0 10px rgba(255, 77, 109, 0.6); }
-    .block  { color: #4fc3f7; text-shadow: 0 0 10px rgba(79, 195, 247, 0.5); }
+
+    /* プレイヤーカード */
+    .status-card-player {
+      flex: 1;
+      min-width: 280px;
+      background: linear-gradient(160deg, rgba(25, 60, 120, 0.8) 0%, rgba(15, 40, 90, 0.8) 100%);
+      border: 2px solid rgba(79, 195, 247, 0.4);
+      border-radius: 14px;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 敵カード */
+    .status-card-enemy {
+      flex: 1;
+      min-width: 280px;
+      background: linear-gradient(160deg, rgba(120, 30, 30, 0.8) 0%, rgba(90, 20, 20, 0.8) 100%);
+      border: 2px solid rgba(239, 154, 154, 0.4);
+      border-radius: 14px;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* カードのタイトル */
+    .status-card-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .status-card-player .status-card-title {
+      color: #80deea;
+      text-shadow: 0 0 8px rgba(79, 195, 247, 0.4);
+    }
+
+    .status-card-enemy .status-card-title {
+      color: #ef9a9a;
+      text-shadow: 0 0 8px rgba(239, 154, 154, 0.4);
+    }
+
+    /* ステータス行 */
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .status-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #9ab;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      flex: 1;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: bold;
+      line-height: 1;
+      text-align: right;
+    }
+
+    .hp { color: #ff4d6d; text-shadow: 0 0 10px rgba(255, 77, 109, 0.6); }
+    .block { color: #4fc3f7; text-shadow: 0 0 10px rgba(79, 195, 247, 0.5); }
     .energy { color: #ffd54f; text-shadow: 0 0 10px rgba(255, 213, 79, 0.6); }
     .enemy-hp { color: #ef9a9a; text-shadow: 0 0 8px rgba(239, 154, 154, 0.4); }
+    .enemy-action { color: #ffb74d; text-shadow: 0 0 8px rgba(255, 183, 77, 0.4); }
+    .poison { color: #66bb6a; text-shadow: 0 0 8px rgba(102, 187, 106, 0.5); }
 
-    /* セーブボタン（ステータスバー内） */
+    /* セーブボタン */
     #btn-save-quick {
       background: rgba(15, 52, 96, 0.8);
       color: #eee;
       border: 1px solid rgba(79, 195, 247, 0.4);
       font-size: .85rem;
       padding: 8px 16px;
-      margin-left: auto;
+      margin-left: 0;
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 8px;
     }
 
     /* ── ログ ── */
@@ -572,29 +652,46 @@
 <!-- ゲーム画面 -->
 <div id="game-screen">
 
-  <!-- ステータスバー -->
+  <!-- ステータスバー（カード風レイアウト） -->
   <div id="status-bar">
-    <div class="stat">
-      <span class="stat-label">プレイヤー HP</span>
-      <span class="stat-value hp" id="player-hp">50</span>
+    <!-- プレイヤーカード -->
+    <div class="status-card-player">
+      <div class="status-card-title">⚔ プレイヤー</div>
+      <div class="status-row">
+        <span class="stat-label">HP</span>
+        <span class="stat-value hp" id="player-hp">50</span>
+      </div>
+      <div class="status-row">
+        <span class="stat-label">ブロック</span>
+        <span class="stat-value block" id="player-block">0</span>
+      </div>
+      <div class="status-row">
+        <span class="stat-label">エネルギー</span>
+        <span class="stat-value energy" id="energy">3</span>
+      </div>
+      <button id="btn-save-quick">💾 セーブ</button>
     </div>
-    <div class="stat">
-      <span class="stat-label">ブロック</span>
-      <span class="stat-value block" id="player-block">0</span>
+
+    <!-- 敵カード -->
+    <div class="status-card-enemy">
+      <div class="status-card-title">👹 敵</div>
+      <div class="status-row">
+        <span class="stat-label">HP</span>
+        <span class="stat-value enemy-hp" id="enemy-hp">-</span>
+      </div>
+      <div class="status-row">
+        <span class="stat-label">行動</span>
+        <span class="stat-value enemy-action" id="enemy-action">-</span>
+      </div>
+      <div class="status-row">
+        <span class="stat-label">ノード</span>
+        <span class="stat-value" id="current-node">-</span>
+      </div>
+      <div class="status-row" id="enemy-poison-row" style="display:none">
+        <span class="stat-label">毒</span>
+        <span class="stat-value poison" id="enemy-poison">-</span>
+      </div>
     </div>
-    <div class="stat">
-      <span class="stat-label">エネルギー</span>
-      <span class="stat-value energy" id="energy">3</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">敵 HP</span>
-      <span class="stat-value enemy-hp" id="enemy-hp">-</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">現在ノード</span>
-      <span class="stat-value" id="current-node">-</span>
-    </div>
-    <button id="btn-save-quick">💾 セーブ</button>
   </div>
 
   <!-- ログ -->
@@ -700,6 +797,24 @@ function applyState(data) {
   $('energy').textContent       = data.energy;
   $('enemy-hp').textContent     = data.in_battle ? data.enemy_hp : '-';
   $('current-node').textContent = NODE_TYPE_JA[data.current_node_type] || data.current_node_type;
+
+  // 敵の行動表示
+  if (data.in_battle && data.enemy_hp > 0) {
+    const intentDisplay = getEnemyIntentDisplay(data.enemy_intent);
+    $('enemy-action').textContent = intentDisplay;
+  } else {
+    $('enemy-action').textContent = '-';
+  }
+
+  // 敵の毒状態表示
+  const enemyPoisonRow = $('enemy-poison-row');
+  const enemyPoisonEl = $('enemy-poison');
+  if (data.enemy_status && data.enemy_status.poison > 0) {
+    enemyPoisonEl.textContent = data.enemy_status.poison;
+    enemyPoisonRow.style.display = 'flex';
+  } else {
+    enemyPoisonRow.style.display = 'none';
+  }
 
   // デッキ情報
   $('deck-info').textContent =
@@ -977,6 +1092,15 @@ async function checkAutosaveOnStart() {
     $('autosave-info').textContent =
       `自動セーブ: HP ${a.player_hp} ／ ${NODE_TYPE_JA[a.current_node] || a.current_node} ／ ${a.updated_at}`;
   }
+}
+
+// ── 敵の行動表示ロジック ──────────────────────────
+function getEnemyIntentDisplay(intent) {
+  const intentMap = {
+    'attack': '攻撃（6）',
+    'block':  '防御（+5）',
+  };
+  return intentMap[intent] || intent;
 }
 
 // ── エスケープ ──────────────────────────────────

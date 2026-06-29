@@ -33,7 +33,8 @@ def init_db():
             discard       TEXT,
             current_node  TEXT,
             game_mode     TEXT DEFAULT 'battle',
-            reward_cards  TEXT DEFAULT '[]'
+            reward_cards  TEXT DEFAULT '[]',
+            enemy_intent  TEXT DEFAULT 'attack'
         )
     """)
     # 手動セーブテーブル
@@ -51,6 +52,7 @@ def init_db():
             current_node  TEXT,
             game_mode     TEXT DEFAULT 'battle',
             reward_cards  TEXT DEFAULT '[]',
+            enemy_intent  TEXT DEFAULT 'attack',
             created_at    TEXT
         )
     """)
@@ -68,6 +70,7 @@ def init_db():
             current_node  TEXT,
             game_mode     TEXT DEFAULT 'battle',
             reward_cards  TEXT DEFAULT '[]',
+            enemy_intent  TEXT DEFAULT 'attack',
             updated_at    TEXT
         )
     """)
@@ -79,6 +82,18 @@ def init_db():
             pass
         try:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN reward_cards TEXT DEFAULT '[]'")
+        except Exception:
+            pass
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN enemy_intent TEXT DEFAULT 'attack'")
+        except Exception:
+            pass
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN enemy_status TEXT DEFAULT '{{}}'")
+        except Exception:
+            pass
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN player_status TEXT DEFAULT '{{}}'")
         except Exception:
             pass
         # 旧 phase カラムのデータを game_mode へ移行
@@ -104,6 +119,7 @@ CARD_DEFS = {
     "Pommel Strike": {"cost": 1, "effect": "damage_draw",   "value": 9},
     "Twin Strike":   {"cost": 1, "effect": "damage2",       "value": 5},
     "Armaments":     {"cost": 1, "effect": "block",         "value": 6},
+    "Poison Strike": {"cost": 1, "effect": "poison",        "value": 3},
 }
 
 INITIAL_DECK = (
@@ -115,7 +131,8 @@ INITIAL_DECK = (
 
 # 報酬プール（初期デッキ以外のカード）
 REWARD_POOL = [
-    "Bash", "Iron Wave", "Shrug It Off", "Pommel Strike", "Twin Strike", "Armaments"
+    "Bash", "Iron Wave", "Shrug It Off", "Pommel Strike", "Twin Strike", "Armaments",
+    "Poison Strike"
 ]
 
 
@@ -165,17 +182,29 @@ def load_state():
     conn.close()
     if row is None:
         return None
+    # enemy_status / player_status の安全な読み込み
+    try:
+        enemy_status = json.loads(row["enemy_status"]) if row["enemy_status"] else {}
+    except Exception:
+        enemy_status = {}
+    try:
+        player_status = json.loads(row["player_status"]) if row["player_status"] else {}
+    except Exception:
+        player_status = {}
     return {
-        "player_hp":    row["player_hp"],
-        "enemy_hp":     row["enemy_hp"],
-        "player_block": row["player_block"],
-        "energy":       row["energy"],
-        "deck":         json.loads(row["deck"]),
-        "hand":         json.loads(row["hand"]),
-        "discard":      json.loads(row["discard"]),
-        "current_node": row["current_node"],
-        "game_mode":    _get_game_mode(row),
-        "reward_cards": json.loads(row["reward_cards"]) if row["reward_cards"] else [],
+        "player_hp":     row["player_hp"],
+        "enemy_hp":      row["enemy_hp"],
+        "player_block":  row["player_block"],
+        "energy":        row["energy"],
+        "deck":          json.loads(row["deck"]),
+        "hand":          json.loads(row["hand"]),
+        "discard":       json.loads(row["discard"]),
+        "current_node":  row["current_node"],
+        "game_mode":     _get_game_mode(row),
+        "reward_cards":  json.loads(row["reward_cards"]) if row["reward_cards"] else [],
+        "enemy_intent":  row["enemy_intent"] if row["enemy_intent"] else "attack",
+        "enemy_status":  enemy_status,
+        "player_status": player_status,
     }
 
 
@@ -184,8 +213,8 @@ def save_state(state):
     conn.execute("DELETE FROM game_state WHERE id=1")
     conn.execute("""
         INSERT INTO game_state
-            (id, player_hp, enemy_hp, player_block, energy, deck, hand, discard, current_node, game_mode, reward_cards)
-        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, player_hp, enemy_hp, player_block, energy, deck, hand, discard, current_node, game_mode, reward_cards, enemy_intent, enemy_status, player_status)
+        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         state["player_hp"],
         state["enemy_hp"],
@@ -197,6 +226,9 @@ def save_state(state):
         state["current_node"],
         state.get("game_mode", "battle"),
         json.dumps(state.get("reward_cards", [])),
+        state.get("enemy_intent", "attack"),
+        json.dumps(state.get("enemy_status", {})),
+        json.dumps(state.get("player_status", {})),
     ))
     conn.commit()
     conn.close()
@@ -218,17 +250,27 @@ def state_to_row(state):
 
 
 def row_to_state(row):
+    try:
+        enemy_status = json.loads(row["enemy_status"]) if row["enemy_status"] else {}
+    except Exception:
+        enemy_status = {}
+    try:
+        player_status = json.loads(row["player_status"]) if row["player_status"] else {}
+    except Exception:
+        player_status = {}
     return {
-        "player_hp":    row["player_hp"],
-        "enemy_hp":     row["enemy_hp"],
-        "player_block": row["player_block"],
-        "energy":       row["energy"],
-        "deck":         json.loads(row["deck"]),
-        "hand":         json.loads(row["hand"]),
-        "discard":      json.loads(row["discard"]),
-        "current_node": row["current_node"],
-        "game_mode":    _get_game_mode(row),
-        "reward_cards": json.loads(row["reward_cards"]) if row["reward_cards"] else [],
+        "player_hp":     row["player_hp"],
+        "enemy_hp":      row["enemy_hp"],
+        "player_block":  row["player_block"],
+        "energy":        row["energy"],
+        "deck":          json.loads(row["deck"]),
+        "hand":          json.loads(row["hand"]),
+        "discard":       json.loads(row["discard"]),
+        "current_node":  row["current_node"],
+        "game_mode":     _get_game_mode(row),
+        "reward_cards":  json.loads(row["reward_cards"]) if row["reward_cards"] else [],
+        "enemy_status":  enemy_status,
+        "player_status": player_status,
     }
 
 
@@ -253,6 +295,22 @@ def enemy_attack(state):
     state["player_hp"] = max(0, state["player_hp"] - max(0, dmg - absorbed))
 
 
+def apply_poison(state):
+    """毒ダメージを処理する。enemy_status の poison 値分だけ敵HPを減少させ、値を1減らす"""
+    poison_log = ""
+    enemy_status = state.get("enemy_status", {})
+    poison = enemy_status.get("poison", 0)
+    if poison > 0:
+        state["enemy_hp"] = max(0, state["enemy_hp"] - poison)
+        new_poison = poison - 1
+        if new_poison <= 0:
+            del state["enemy_status"]["poison"]
+        else:
+            state["enemy_status"]["poison"] = new_poison
+        poison_log = f" 毒で {poison} ダメージ！"
+    return poison_log
+
+
 def node_info(node_id):
     return NODE_MAP.get(node_id)
 
@@ -269,6 +327,11 @@ def generate_reward_cards():
     pool = REWARD_POOL[:]
     random.shuffle(pool)
     return pool[:3]
+
+
+def decide_enemy_intent():
+    """敵の次の行動をランダムに決定（"attack" または "block"）"""
+    return random.choice(["attack", "block"])
 
 
 # ─────────────────────────────────────────
@@ -292,6 +355,11 @@ def enrich_state(state):
     )
     # カード定義も付与
     result["card_defs"] = CARD_DEFS
+    # 敵の行動意図をフロントに返す
+    result["enemy_intent"] = state.get("enemy_intent", "attack")
+    # 状態異常をフロントに返す
+    result["enemy_status"] = state.get("enemy_status", {})
+    result["player_status"] = state.get("player_status", {})
     return result
 
 
@@ -308,16 +376,19 @@ def start():
     deck = INITIAL_DECK[:]
     random.shuffle(deck)
     state = {
-        "player_hp":    50,
-        "enemy_hp":     0,
-        "player_block": 0,
-        "energy":       3,
-        "deck":         deck,
-        "hand":         [],
-        "discard":      [],
-        "current_node": "n0",
-        "game_mode":    "battle",
-        "reward_cards": [],
+        "player_hp":     50,
+        "enemy_hp":      0,
+        "player_block":  0,
+        "energy":        3,
+        "deck":          deck,
+        "hand":          [],
+        "discard":       [],
+        "current_node":  "n0",
+        "game_mode":     "battle",
+        "reward_cards":  [],
+        "enemy_intent":  decide_enemy_intent(),
+        "enemy_status":  {},
+        "player_status": {},
     }
     # 最初のノードが戦闘なら敵HPをセット
     node = node_info("n0")
@@ -389,6 +460,11 @@ def use_card():
         total = value * 2
         state["enemy_hp"] = max(0, state["enemy_hp"] - total)
         log = f"{card_name} で {value}×2 = {total} ダメージ！"
+    elif effect == "poison":
+        if "enemy_status" not in state:
+            state["enemy_status"] = {}
+        state["enemy_status"]["poison"] = state["enemy_status"].get("poison", 0) + value
+        log = f"{card_name} で 毒 +{value} 付与！"
 
     # 手札から捨て札へ
     state["hand"].remove(card_name)
@@ -428,11 +504,15 @@ def end_turn():
     # ブロックリセット
     state["player_block"] = 0
 
-    # 敵行動
+    # 毒ダメージ処理
     log = ""
+    poison_log = apply_poison(state)
+    log += poison_log
+
+    # 敵行動
     if state["enemy_hp"] > 0:
         enemy_attack(state)
-        log = "敵が 6 ダメージ攻撃！"
+        log += "敵が 6 ダメージ攻撃！"
 
     # 勝敗チェック
     if state["player_hp"] <= 0:
@@ -454,6 +534,7 @@ def end_turn():
     # 次のプレイヤーターン開始
     state["energy"] = 3
     draw_cards(state, 5)
+    state["enemy_intent"] = decide_enemy_intent()
 
     save_state(state)
     enriched = enrich_state(state)
@@ -500,6 +581,10 @@ def map_select():
         state["hand"] = []
         draw_cards(state, 5)
         state["game_mode"] = "battle"
+        state["enemy_intent"] = decide_enemy_intent()
+        # 新しい戦闘開始時に状態異常をリセット
+        state["enemy_status"] = {}
+        state["player_status"] = {}
         log = f"{node['type']} との戦闘開始！"
 
     state["reward_cards"] = []
