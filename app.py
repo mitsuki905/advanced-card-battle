@@ -454,10 +454,11 @@ def generate_reward_cards(state):
 
     floor = state.get("floor", 1)
 
-    # 出現率（かなりバランスいい配分）
-    common_rate   = 0.6
+    rare_rate = 0.1 + (floor - 1) * 0.05
+    rare_rate = min(rare_rate, 0.5)  # 上限
+
     uncommon_rate = 0.3
-    rare_rate     = 0.1 + (floor - 1) * 0.05  # Actでレア増える
+    common_rate = 1.0 - (rare_rate + uncommon_rate)
 
     for _ in range(3):
         r = random.random()
@@ -652,6 +653,7 @@ def use_card():
 
         log = f"{card_name} で {dmg} ダメージ＆1枚ドロー！"
 
+    
     elif effect == "damage2":
         total = 0
         for _ in range(2):
@@ -661,8 +663,9 @@ def use_card():
         state["enemy_block"] -= absorbed
         total -= absorbed
 
-        state["enemy_hp"] -= total
+        state["enemy_hp"] = max(0, state["enemy_hp"] - total)
         log = f"{card_name} で {total} ダメージ（×2）！"
+
 
     # ───────── 防御
     elif effect == "block":
@@ -795,7 +798,7 @@ def end_turn():
     # ───────── 毒ダメージ
     poison = enemy_status.get("poison", 0)
     if poison > 0:
-        state["enemy_hp"] -= poison
+        state["enemy_hp"] = max(0, state["enemy_hp"] - poison)
         log += f"毒で {poison} ダメージ！ "
 
     # ───────── 敵撃破チェック（超重要：先にやる）
