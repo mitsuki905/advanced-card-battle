@@ -120,6 +120,15 @@ CARD_DEFS = {
     "Twin Strike":   {"cost": 1, "effect": "damage2",       "value": 5},
     "Armaments":     {"cost": 1, "effect": "block",         "value": 6},
     "Poison Strike": {"cost": 1, "effect": "poison",        "value": 3},
+    "Weak Strike":   {"cost": 1, "effect": "weak",          "value": 2},
+    # 新規カード
+    "Jab":           {"cost": 0, "effect": "damage",        "value": 3},
+    "Brace":         {"cost": 0, "effect": "block",         "value": 2},
+    "Pummel":        {"cost": 3, "effect": "damage",        "value": 16},
+    "Toxic Blow":    {"cost": 2, "effect": "damage_poison", "value": 5},
+    "Weakening Hit": {"cost": 2, "effect": "damage_weak",   "value": 7},
+    "Fortress":      {"cost": 2, "effect": "block",         "value": 12},
+    "Recharge":      {"cost": 1, "effect": "energy",        "value": 2},
 }
 
 INITIAL_DECK = (
@@ -132,7 +141,7 @@ INITIAL_DECK = (
 # 報酬プール（初期デッキ以外のカード）
 REWARD_POOL = [
     "Bash", "Iron Wave", "Shrug It Off", "Pommel Strike", "Twin Strike", "Armaments",
-    "Poison Strike"
+    "Poison Strike", "Jab", "Brace", "Pummel", "Toxic Blow", "Weakening Hit", "Fortress", "Recharge"
 ]
 
 
@@ -290,6 +299,9 @@ def draw_cards(state, n=1):
 def enemy_attack(state):
     """敵の攻撃（固定6ダメージ、ブロックで軽減）"""
     dmg = 6
+    # weak状態なら敵の攻撃力を0.75倍にする
+    if state.get("enemy_status", {}).get("weak", 0) > 0:
+        dmg = int(dmg * 0.75)
     absorbed = min(state["player_block"], dmg)
     state["player_block"] = max(0, state["player_block"] - dmg)
     state["player_hp"] = max(0, state["player_hp"] - max(0, dmg - absorbed))
@@ -437,9 +449,12 @@ def use_card():
     effect = card["effect"]
     value = card["value"]
 
+    # player_statusにweakがある場合のダメージ倍率
+    player_weak = state.get("player_status", {}).get("weak", 0) > 0
+
     log = ""
     if effect == "damage":
-        actual = max(0, value)
+        actual = int(max(0, value) * 0.75) if player_weak else max(0, value)
         state["enemy_hp"] = max(0, state["enemy_hp"] - actual)
         log = f"{card_name} で {actual} ダメージ！"
     elif effect == "block":
@@ -449,22 +464,47 @@ def use_card():
         draw_cards(state, value)
         log = f"{card_name} で {value} 枚ドロー！"
     elif effect == "damage_block":
-        state["enemy_hp"] = max(0, state["enemy_hp"] - value)
+        dmg_val = int(value * 0.75) if player_weak else value
+        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg_val)
         state["player_block"] += value
-        log = f"{card_name} で {value} ダメージ＆ブロック +{value}！"
+        log = f"{card_name} で {dmg_val} ダメージ＆ブロック +{value}！"
     elif effect == "damage_draw":
-        state["enemy_hp"] = max(0, state["enemy_hp"] - value)
+        dmg_val = int(value * 0.75) if player_weak else value
+        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg_val)
         draw_cards(state, 1)
-        log = f"{card_name} で {value} ダメージ＆1枚ドロー！"
+        log = f"{card_name} で {dmg_val} ダメージ＆1枚ドロー！"
     elif effect == "damage2":
         total = value * 2
+        total = int(total * 0.75) if player_weak else total
         state["enemy_hp"] = max(0, state["enemy_hp"] - total)
-        log = f"{card_name} で {value}×2 = {total} ダメージ！"
+        log = f"{card_name} で {total} ダメージ（×2）！"
     elif effect == "poison":
         if "enemy_status" not in state:
             state["enemy_status"] = {}
         state["enemy_status"]["poison"] = state["enemy_status"].get("poison", 0) + value
         log = f"{card_name} で 毒 +{value} 付与！"
+    elif effect == "weak":
+        if "enemy_status" not in state:
+            state["enemy_status"] = {}
+        state["enemy_status"]["weak"] = state["enemy_status"].get("weak", 0) + value
+        log = f"{card_name} で 敵に weak +{value} 付与！"
+    elif effect == "damage_poison":
+        dmg_val = int(value * 0.75) if player_weak else value
+        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg_val)
+        if "enemy_status" not in state:
+            state["enemy_status"] = {}
+        state["enemy_status"]["poison"] = state["enemy_status"].get("poison", 0) + value
+        log = f"{card_name} で {dmg_val} ダメージ＆毒 +{value} 付与！"
+    elif effect == "damage_weak":
+        dmg_val = int(value * 0.75) if player_weak else value
+        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg_val)
+        if "enemy_status" not in state:
+            state["enemy_status"] = {}
+        state["enemy_status"]["weak"] = state["enemy_status"].get("weak", 0) + value
+        log = f"{card_name} で {dmg_val} ダメージ＆敵に weak +{value} 付与！"
+    elif effect == "energy":
+        state["energy"] = min(state["energy"] + value, 10)
+        log = f"{card_name} でエネルギー +{value}！"
 
     # 手札から捨て札へ
     state["hand"].remove(card_name)
