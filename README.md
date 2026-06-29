@@ -134,6 +134,7 @@ http://localhost:5000
 | Pommel Strike | 1 | 9 ダメージ＆1枚ドロー |
 | Twin Strike | 1 | 5×2 ダメージ |
 | Armaments | 1 | ブロック +6 |
+| Poison Strike | 1 | 毒 +3 付与 |
 
 ---
 
@@ -154,7 +155,7 @@ http://localhost:5000
 
 ---
 
-## � プレイヤー仕様
+## 👤 プレイヤー仕様
 
 | 項目 | 値 |
 |------|----|
