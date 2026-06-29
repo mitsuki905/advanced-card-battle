@@ -251,6 +251,7 @@ def load_state():
         "reward_type":   row["reward_type"] if row["reward_type"] else "battle",
         "enemy_status":  enemy_status,
         "player_status": player_status,
+        "floor": row["floor"] if "floor" in row.keys() else 1,
     }
 
 
@@ -259,8 +260,8 @@ def save_state(state):
     conn.execute("DELETE FROM game_state WHERE id=1")
     conn.execute("""
         INSERT INTO game_state
-            (id, player_hp, enemy_hp, player_block, enemy_block, energy, deck, hand, discard, current_node, game_mode, reward_cards, enemy_intent, enemy_status, player_status)
-        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, player_hp, enemy_hp, player_block, enemy_block, energy, deck, hand, discard, current_node, game_mode, reward_cards, enemy_intent, enemy_status, player_status,floor)
+        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         state["player_hp"],
         state["enemy_hp"],
@@ -276,6 +277,7 @@ def save_state(state):
         state.get("enemy_intent", "attack"),
         json.dumps(state.get("enemy_status", {})),
         json.dumps(state.get("player_status", {})),
+        state.get("floor", 1)
     ))
     conn.commit()
     conn.close()
@@ -445,6 +447,7 @@ def start():
         "enemy_intent":  decide_enemy_intent(),
         "enemy_status":  {},
         "player_status": {},
+        "floor" : 1
     }
     # 最初のノードが戦闘なら敵HPをセット
     node = node_info("n0")
@@ -569,26 +572,47 @@ def use_card():
         state["energy"] = min(state["energy"] + value, 10)
         log = f"{card_name} でエネルギー +{value}！"
 
+    
     # 手札から捨て札へ
     state["hand"].remove(card_name)
     state["discard"].append(card_name)
 
-    # 敵が死んでいるか確認する
-    if state["enemy_hp"] <= 0:
-        # 戦闘勝利 → 報酬フェーズへ（game_mode = "reward"）
+    # ✅ 撃破判定（ここが重要）
+    if state["game_mode"] == "battle" and state["enemy_hp"] <= 0:
+
+        # nodeは最初に取得したやつを使う（再取得不要）
+        if node and node["type"] == "boss":
+            state["floor"] = state.get("floor", 1) + 1
+            state["current_node"] = "n0"
+            state["game_mode"] = "map"   # ✅ 明示的に戻す（安定化）
+
+            save_state(state)
+
+            enriched = enrich_state(state)
+            enriched["log"] = f"{log} 🔥 ボス撃破！Act {state['floor']} に進みます！"
+            return jsonify(enriched)
+
+        # ✅ 通常戦闘勝利
         reward_cards = generate_reward_cards()
+
         state["game_mode"] = "reward"
         state["reward_cards"] = reward_cards
         state["reward_type"] = "battle"
+
         save_state(state)
+
         enriched = enrich_state(state)
-        enriched["log"] = log + " 敵を倒した！報酬を獲得できます。"
+        enriched["log"] = log + " 戦闘に勝利！報酬を獲得できます。"
         return jsonify(enriched)
 
+    # ✅ 通常続行
     save_state(state)
+
     enriched = enrich_state(state)
     enriched["log"] = log
     return jsonify(enriched)
+
+
 
 
 @app.route("/action/end_turn", methods=["POST"])
@@ -610,38 +634,51 @@ def end_turn():
     poison_log = apply_poison(state)
     log += poison_log
 
-    # 敵行動
-    if state["enemy_hp"] > 0:
-        enemy_intent = state.get("enemy_intent", "attack")
-        if enemy_intent == "attack":
-            enemy_attack(state)
-            log += "敵が 6 ダメージ攻撃！"
-        elif enemy_intent == "block":
-            state["enemy_block"] = state.get("enemy_block", 0) + 5
-            log += "敵がブロック +5！"
-        
+    # ✅ ここで先に撃破判定する（順番が超重要）
+    if state["enemy_hp"] <= 0:
+
+        # ✅ ボスならAct進行
+        if node and node["type"] == "boss":
+            state["floor"] = state.get("floor", 1) + 1
+            state["current_node"] = "n0"
+
+            save_state(state)
+            enriched = enrich_state(state)
+            enriched["log"] = f"🔥 ボス撃破！Act {state['floor']} に進みます！"
+            return jsonify(enriched)
+
+        # ✅ 通常戦闘勝利
+        reward_cards = generate_reward_cards()
+        state["game_mode"] = "reward"
+        state["reward_cards"] = reward_cards
+        state["reward_type"] = "battle"
+
+        save_state(state)
+        enriched = enrich_state(state)
+        enriched["log"] = log + " 戦闘に勝利！報酬を獲得できます。"
+        return jsonify(enriched)
+
+    # ✅ 敵行動（敵が生きているときだけ）
+    enemy_intent = state.get("enemy_intent", "attack")
+
+    if enemy_intent == "attack":
+        enemy_attack(state)
+        log += "敵が 6 ダメージ攻撃！"
+    elif enemy_intent == "block":
+        state["enemy_block"] = state.get("enemy_block", 0) + 5
+        log += "敵がブロック +5！"
+
     # ブロックリセット
     state["player_block"] = 0
 
-    # 勝敗チェック
+    # プレイヤー死亡
     if state["player_hp"] <= 0:
         save_state(state)
         enriched = enrich_state(state)
         enriched["log"] = log + " ゲームオーバー..."
         return jsonify(enriched)
 
-    if state["enemy_hp"] <= 0:
-        # 戦闘勝利 → 報酬フェーズへ（game_mode = "reward"）
-        reward_cards = generate_reward_cards()
-        state["game_mode"] = "reward"
-        state["reward_cards"] = reward_cards
-        state["reward_type"] = "battle"
-        save_state(state)
-        enriched = enrich_state(state)
-        enriched["log"] = log + " 戦闘に勝利！報酬を獲得できます。"
-        return jsonify(enriched)
-
-    # 次のプレイヤーターン開始
+    # 次ターン
     state["energy"] = 3
     draw_cards(state, 5)
     state["enemy_intent"] = decide_enemy_intent()
@@ -652,10 +689,13 @@ def end_turn():
     return jsonify(enriched)
 
 
+
+
 @app.route("/map/select", methods=["POST"])
 def map_select():
     data = request.get_json()
     node_id = data.get("node_id")
+
     state = load_state()
     if state is None:
         return jsonify({"error": "No game in progress"}), 404
@@ -674,34 +714,69 @@ def map_select():
     if node_id not in next_ids:
         return jsonify({"error": "Invalid node selection"}), 400
 
+    # ノード更新
     state["current_node"] = node_id
     node = node_info(node_id)
 
     log = ""
+
+    # ──────────────
+    # 休憩ノード
+    # ──────────────
     if node["type"] == "rest":
         state["enemy_hp"] = 0
         state["game_mode"] = "rest_choice"
         log = "休憩ノードに到達！「休憩」か「ショップ」を選んでください。"
+
+    # ──────────────
+    # 戦闘ノード
+    # ──────────────
     elif node["type"] in ENEMY_HP_TABLE:
-        state["enemy_hp"] = ENEMY_HP_TABLE[node["type"]]
+
+        # ✅ 基本HP
+        base_hp = ENEMY_HP_TABLE[node["type"]]
+
+        # ✅ floor取得（なければ1）
+        floor = state.get("floor", 1)
+
+        # ✅ 🎯 HP強化（ここが超重要）
+        state["enemy_hp"] = base_hp + (floor - 1) * 20
+
+        # 初期化
         state["energy"] = 3
         state["player_block"] = 0
         state["enemy_block"] = 0
+
+        # 手札→discard
         state["discard"].extend(state["hand"])
         state["hand"] = []
+
+        # ドロー
         draw_cards(state, 5)
+
+        # 戦闘開始
         state["game_mode"] = "battle"
         state["enemy_intent"] = decide_enemy_intent()
-        # 新しい戦闘開始時に状態異常をリセット
+
+        # 状態異常リセット
         state["enemy_status"] = {}
         state["player_status"] = {}
-        log = f"{node['type']} との戦闘開始！"
 
+        # ✅ ログ（階層表示付き）
+        
+        current_floor = state.get("floor", 1)
+        log = f"{node['type']} との戦闘開始！（Act {current_floor}）"
+
+
+    # 報酬リセット
     state["reward_cards"] = []
+
     save_state(state)
+
     enriched = enrich_state(state)
     enriched["log"] = log
     return jsonify(enriched)
+
 
 
 # ─────────────────────────────────────────
@@ -735,12 +810,17 @@ def rest_select():
         enriched["log"] = "ショップ！カードを1枚選んでデッキに追加できます。"
         return jsonify(enriched)
     elif choice == "remove":
-        remove_cards = state["deck"][:]
+        remove_cards = (
+        state["deck"][:] +
+        state["hand"][:] +
+        state["discard"][:]
+        )
+
         state["game_mode"] = "remove"
-        save_state(state)
         enriched = enrich_state(state)
         enriched["remove_cards"] = remove_cards
         enriched["log"] = "カード削除モード。削除するカードを選んでください。"
+        save_state(state)
         return jsonify(enriched)
     else:
         return jsonify({"error": "Invalid choice. Use 'heal', 'shop', or 'remove'"}), 400
@@ -781,6 +861,46 @@ def reward_select():
     enriched = enrich_state(state)
     enriched["log"] = f"「{card_name}」をデッキに追加しました！マップへ戻ります。"
     return jsonify(enriched)
+
+
+# ─────────────────────────────────────────
+# カード削除
+# ─────────────────────────────────────────
+@app.route("/remove/select", methods=["POST"])
+def remove_select():
+    data = request.get_json()
+    card_name = data.get("card")
+
+    state = load_state()
+    if state is None:
+        return jsonify({"error": "No game in progress"}), 404
+
+    if state.get("game_mode") != "remove":
+        return jsonify({"error": "Not in remove mode"}), 400
+
+    removed = False
+
+    # ✅ ★ここが修正ポイント（hand優先にする）
+    for zone in ["hand", "deck", "discard"]:
+        if card_name in state[zone]:
+            state[zone].remove(card_name)
+            print("削除:", card_name, "from", zone)  # デバッグ用
+            removed = True
+            break
+
+    if not removed:
+        return jsonify({"error": "Card not found"}), 400
+
+    # ✅ 削除後はマップへ戻す
+    state["game_mode"] = "map"
+
+    save_state(state)
+
+    enriched = enrich_state(state)
+    enriched["log"] = f"{card_name} を削除しました！"
+
+    return jsonify(enriched)
+
 
 
 # ─────────────────────────────────────────

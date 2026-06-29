@@ -1087,6 +1087,7 @@ function showMap(data) {
   $('map-area').style.display         = 'block';
   $('reward-area').style.display      = 'none';
   $('rest-choice-area').style.display = 'none';
+  $('remove-area').style.display      = 'none';
 
   const nodeButtons = $('node-buttons');
   nodeButtons.innerHTML = '';
@@ -1149,7 +1150,26 @@ function showRemove(data) {
       <span class="card-cost">${costText}</span>
       <span class="card-desc">${descText}</span>
     `;
-    // ※ まだ削除処理は実装しない（クリックイベントは未設定）
+    btn.onclick = async () => {
+    const res = await fetch('/remove/select', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card: cardName })
+    });
+
+    const result = await res.json();
+    applyState(result);
+    
+    
+    console.log(
+        result.deck.length +
+        result.hand.length +
+        result.discard.length
+      );
+
+
+  };
+
     removeCardsEl.appendChild(btn);
   });
 }
