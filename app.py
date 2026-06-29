@@ -117,28 +117,59 @@ def init_db():
 # カード定義
 # ─────────────────────────────────────────
 CARD_DEFS = {
-    "Strike":        {"cost": 1, "effect": "damage",       "value": 6},
-    "Defend":        {"cost": 1, "effect": "block",         "value": 5},
-    "Draw":          {"cost": 1, "effect": "draw",          "value": 2},
-    "Heavy Strike":  {"cost": 2, "effect": "damage",        "value": 10},
-    "Bash":          {"cost": 2, "effect": "damage",        "value": 8},
-    "Iron Wave":     {"cost": 1, "effect": "damage_block",  "value": 5},
-    "Shrug It Off":  {"cost": 1, "effect": "block",         "value": 8},
-    "Pommel Strike": {"cost": 1, "effect": "damage_draw",   "value": 9},
-    "Twin Strike":   {"cost": 1, "effect": "damage2",       "value": 5},
-    "Armaments":     {"cost": 1, "effect": "block",         "value": 6},
-    "Poison Strike": {"cost": 1, "effect": "poison",        "value": 3},
-    "Weak Strike":   {"cost": 1, "effect": "weak",          "value": 2},
-    # 新規カード
-    "Jab":           {"cost": 0, "effect": "damage",        "value": 3},
-    "Brace":         {"cost": 0, "effect": "block",         "value": 2},
-    "Pummel":        {"cost": 3, "effect": "damage",        "value": 16},
-    "Toxic Blow":    {"cost": 2, "effect": "damage_poison", "value": 5},
-    "Weakening Hit": {"cost": 2, "effect": "damage_weak",   "value": 7},
-    "Fortress":      {"cost": 2, "effect": "block",         "value": 12},
-    "Recharge":      {"cost": 1, "effect": "energy",        "value": 2},
+
+    # ───── 基本カード（序盤の基準） ─────
+    "Strike":        {"cost": 1, "effect": "damage", "value": 6,  "rarity": "starter"},
+    "Defend":        {"cost": 1, "effect": "block",  "value": 5,  "rarity": "starter"},
+    "Draw":          {"cost": 1, "effect": "draw",   "value": 2,  "rarity": "starter"},
+    "Heavy Strike":  {"cost": 2, "effect": "damage", "value": 10, "rarity": "starter"},
+
+    # ───── コモン（安定カード） ─────
+    # シンプルで扱いやすく、デッキの土台になる
+    "Bash":          {"cost": 2, "effect": "damage",       "value": 8, "rarity": "common"},
+    "Iron Wave":     {"cost": 1, "effect": "damage_block", "value": 5, "rarity": "common"},
+    "Shrug It Off":  {"cost": 1, "effect": "block",        "value": 7, "rarity": "common"},
+    "Jab":           {"cost": 0, "effect": "damage",       "value": 3, "rarity": "common"},
+    "Brace":         {"cost": 0, "effect": "block",        "value": 3, "rarity": "common"},
+
+    # ───── アンコモン（戦略カード） ─────
+    # シナジーや状態異常を使って戦い方を広げる
+    "Pommel Strike": {"cost": 1, "effect": "damage_draw",  "value": 8, "rarity": "uncommon"},
+    "Twin Strike":   {"cost": 1, "effect": "damage2",      "value": 4, "rarity": "uncommon"},
+    "Armaments":     {"cost": 1, "effect": "block",        "value": 7, "rarity": "uncommon"},
+
+    # 毒ビルド用（ターン経過でダメージを伸ばす）
+    "Poison Strike": {"cost": 1, "effect": "poison",       "value": 5, "rarity": "uncommon"},
+    "Toxic Blow":    {"cost": 2, "effect": "damage_poison","value": 6, "rarity": "uncommon"},
+
+    # 弱体ビルド用（敵の攻撃を抑える）
+    "Weak Strike":   {"cost": 1, "effect": "weak",         "value": 2, "rarity": "uncommon"},
+    "Weakening Hit": {"cost": 2, "effect": "damage_weak",  "value": 6, "rarity": "uncommon"},
+
+    # ───── レア（ビルドの中心） ─────
+    # 強力でゲームの方向性を決めるカード
+
+    # 高火力系
+    "Pummel":            {"cost": 3, "effect": "damage",      "value": 16, "rarity": "rare"},
+    "Execution":         {"cost": 2, "effect": "damage",      "value": 16, "rarity": "rare"},
+
+    # 防御特化
+    "Fortress":          {"cost": 2, "effect": "block",       "value": 12, "rarity": "rare"},
+    "Absolute Guard":    {"cost": 1, "effect": "block",       "value": 12, "rarity": "rare"},
+
+    # リソース操作
+    "Recharge":          {"cost": 1, "effect": "energy",      "value": 1,  "rarity": "rare"},
+    "Overdrive":         {"cost": 0, "effect": "energy",      "value": 2,  "rarity": "rare"},
+    "Deep Focus":        {"cost": 0, "effect": "draw",        "value": 3,  "rarity": "rare"},
+
+    # 状態異常ビルド強化
+    "Neurotoxin":        {"cost": 1, "effect": "poison",      "value": 8,  "rarity": "rare"},
+    "Predator Strike":   {"cost": 1, "effect": "damage_draw", "value": 7,  "rarity": "rare"},
 }
 
+# ─────────────────────────────────────────
+# 初期デッキ
+# ─────────────────────────────────────────
 INITIAL_DECK = (
     ["Strike"] * 5 +
     ["Defend"] * 4 +
@@ -146,12 +177,52 @@ INITIAL_DECK = (
     ["Heavy Strike"] * 1
 )
 
-# 報酬プール（初期デッキ以外のカード）
-REWARD_POOL = [
-    "Bash", "Iron Wave", "Shrug It Off", "Pommel Strike", "Twin Strike", "Armaments",
-    "Poison Strike", "Jab", "Brace", "Pummel", "Toxic Blow", "Weakening Hit", "Fortress", "Recharge"
+# ─────────────────────────────────────────
+# 報酬プール（バランス調整版）
+# ─────────────────────────────────────────
+
+# コモン（安定枠）
+COMMON_REWARD_POOL = [
+    "Bash",
+    "Iron Wave",
+    "Shrug It Off",
+    "Jab",
+    "Brace"
 ]
 
+# アンコモン（ビルドの入口）
+UNCOMMON_REWARD_POOL = [
+    "Pommel Strike",
+    "Twin Strike",
+    "Armaments",
+
+    # 状態異常（軸になる）
+    "Poison Strike",
+    "Toxic Blow",
+
+    "Weak Strike",
+    "Weakening Hit"
+]
+
+# レア（ビルド完成パーツ）
+RARE_REWARD_POOL = [
+    # 火力
+    "Pummel",
+    "Execution",
+
+    # 防御
+    "Fortress",
+    "Absolute Guard",
+
+    # リソース系
+    "Recharge",
+    "Overdrive",
+    "Deep Focus",
+
+    # 状態異常強化
+    "Neurotoxin",
+    "Predator Strike"
+]
 
 # ─────────────────────────────────────────
 # マップ定義
@@ -376,11 +447,32 @@ def available_next_nodes(current_node_id):
     return [NODE_MAP[nid] for nid in node["next"] if nid in NODE_MAP]
 
 
-def generate_reward_cards():
-    """報酬カードを3枚ランダムに選出"""
-    pool = REWARD_POOL[:]
-    random.shuffle(pool)
-    return pool[:3]
+import random
+
+def generate_reward_cards(state):
+    rewards = []
+
+    floor = state.get("floor", 1)
+
+    # 出現率（かなりバランスいい配分）
+    common_rate   = 0.6
+    uncommon_rate = 0.3
+    rare_rate     = 0.1 + (floor - 1) * 0.05  # Actでレア増える
+
+    for _ in range(3):
+        r = random.random()
+
+        if r < rare_rate:
+            card = random.choice(RARE_REWARD_POOL)
+        elif r < rare_rate + uncommon_rate:
+            card = random.choice(UNCOMMON_REWARD_POOL)
+        else:
+            card = random.choice(COMMON_REWARD_POOL)
+
+        rewards.append(card)
+
+    return rewards
+
 
 
 def decide_enemy_intent():
@@ -492,108 +584,171 @@ def use_card():
     if state["energy"] < card["cost"]:
         return jsonify({"error": "Not enough energy"}), 400
 
-    # カード効果適用
+    # ───────── 状態初期化
+    if "player_status" not in state:
+        state["player_status"] = {}
+    if "enemy_status" not in state:
+        state["enemy_status"] = {}
+
+    player_status = state["player_status"]
+    enemy_status  = state["enemy_status"]
+
+    # ───────── 共通ダメージ計算
+    def calc_damage(base):
+        dmg = base
+
+        # 筋力
+        dmg += player_status.get("strength", 0)
+
+        # 弱体（攻撃ダウン）
+        if player_status.get("weak", 0) > 0:
+            dmg *= 0.75
+
+        # 被ダメ増
+        if enemy_status.get("vulnerable", 0) > 0:
+            dmg *= 1.5
+
+        return int(max(0, dmg))
+
+    # ───────── カード使用
     state["energy"] -= card["cost"]
     effect = card["effect"]
     value = card["value"]
 
-    # player_statusにweakがある場合のダメージ倍率
-    player_weak = state.get("player_status", {}).get("weak", 0) > 0
-
     log = ""
+
+    # ───────── 攻撃系
     if effect == "damage":
-        actual = int(max(0, value) * 0.75) if player_weak else max(0, value)
-        absorbed = min(state.get("enemy_block", 0), actual)
-        state["enemy_block"] = state.get("enemy_block", 0) - absorbed
-        actual -= absorbed
-        state["enemy_hp"] = max(0, state["enemy_hp"] - actual)
-        log = f"{card_name} で {actual} ダメージ！"
-    elif effect == "block":
+        dmg = calc_damage(value)
+
+        absorbed = min(state.get("enemy_block", 0), dmg)
+        state["enemy_block"] -= absorbed
+        dmg -= absorbed
+
+        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg)
+        log = f"{card_name} で {dmg} ダメージ！"
+
+    elif effect == "damage_block":
+        dmg = calc_damage(value)
+
+        absorbed = min(state.get("enemy_block", 0), dmg)
+        state["enemy_block"] -= absorbed
+        dmg -= absorbed
+
+        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg)
         state["player_block"] += value
-        log = f"{card_name} でブロック +{value}！"
+
+        log = f"{card_name} で {dmg} ダメージ＆ブロック +{value}！"
+
+    elif effect == "damage_draw":
+        dmg = calc_damage(value)
+
+        absorbed = min(state.get("enemy_block", 0), dmg)
+        state["enemy_block"] -= absorbed
+        dmg -= absorbed
+
+        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg)
+        draw_cards(state, 1)
+
+        log = f"{card_name} で {dmg} ダメージ＆1枚ドロー！"
+
+    elif effect == "damage2":
+        total = 0
+        for _ in range(2):
+            total += calc_damage(value)
+
+        absorbed = min(state.get("enemy_block", 0), total)
+        state["enemy_block"] -= absorbed
+        total -= absorbed
+
+        state["enemy_hp"] -= total
+        log = f"{card_name} で {total} ダメージ（×2）！"
+
+    # ───────── 防御
+    elif effect == "block":
+        block_val = value
+
+        if player_status.get("frail", 0) > 0:
+            block_val = int(block_val * 0.75)
+
+        state["player_block"] += block_val
+        log = f"{card_name} でブロック +{block_val}！"
+
+    # ───────── ドロー
     elif effect == "draw":
         draw_cards(state, value)
         log = f"{card_name} で {value} 枚ドロー！"
-    elif effect == "damage_block":
-        dmg_val = int(value * 0.75) if player_weak else value
-        absorbed = min(state.get("enemy_block", 0), dmg_val)
-        state["enemy_block"] = state.get("enemy_block", 0) - absorbed
-        dmg_val -= absorbed
-        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg_val)
-        state["player_block"] += value
-        log = f"{card_name} で {dmg_val} ダメージ＆ブロック +{value}！"
-    elif effect == "damage_draw":
-        dmg_val = int(value * 0.75) if player_weak else value
-        absorbed = min(state.get("enemy_block", 0), dmg_val)
-        state["enemy_block"] = state.get("enemy_block", 0) - absorbed
-        dmg_val -= absorbed
-        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg_val)
-        draw_cards(state, 1)
-        log = f"{card_name} で {dmg_val} ダメージ＆1枚ドロー！"
-    elif effect == "damage2":
-        total = value * 2
-        total = int(total * 0.75) if player_weak else total
-        absorbed = min(state.get("enemy_block", 0), total)
-        state["enemy_block"] = state.get("enemy_block", 0) - absorbed
-        total -= absorbed
-        state["enemy_hp"] = max(0, state["enemy_hp"] - total)
-        log = f"{card_name} で {total} ダメージ（×2）！"
+
+    # ───────── 状態異常
     elif effect == "poison":
-        if "enemy_status" not in state:
-            state["enemy_status"] = {}
-        state["enemy_status"]["poison"] = state["enemy_status"].get("poison", 0) + value
-        log = f"{card_name} で 毒 +{value} 付与！"
+        enemy_status["poison"] = enemy_status.get("poison", 0) + value
+        log = f"{card_name} で毒 +{value}！"
+
     elif effect == "weak":
-        if "enemy_status" not in state:
-            state["enemy_status"] = {}
-        state["enemy_status"]["weak"] = state["enemy_status"].get("weak", 0) + value
-        log = f"{card_name} で 敵に weak +{value} 付与！"
+        enemy_status["weak"] = enemy_status.get("weak", 0) + value
+        log = f"{card_name} で弱体 +{value}！"
+
+    elif effect == "vulnerable":
+        enemy_status["vulnerable"] = enemy_status.get("vulnerable", 0) + value
+        log = f"{card_name} で被ダメ増加 +{value}！"
+
+    elif effect == "frail":
+        enemy_status["frail"] = enemy_status.get("frail", 0) + value
+        log = f"{card_name} で防御低下 +{value}！"
+
+    # ───────── バフ
+    elif effect == "strength":
+        player_status["strength"] = player_status.get("strength", 0) + value
+        log = f"{card_name} で筋力 +{value}！"
+
+    # ───────── 複合
     elif effect == "damage_poison":
-        dmg_val = int(value * 0.75) if player_weak else value
-        absorbed = min(state.get("enemy_block", 0), dmg_val)
-        state["enemy_block"] = state.get("enemy_block", 0) - absorbed
-        dmg_val -= absorbed
-        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg_val)
-        if "enemy_status" not in state:
-            state["enemy_status"] = {}
-        state["enemy_status"]["poison"] = state["enemy_status"].get("poison", 0) + value
-        log = f"{card_name} で {dmg_val} ダメージ＆毒 +{value} 付与！"
+        dmg = calc_damage(value)
+
+        absorbed = min(state.get("enemy_block", 0), dmg)
+        state["enemy_block"] -= absorbed
+        dmg -= absorbed
+
+        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg)
+        enemy_status["poison"] = enemy_status.get("poison", 0) + value
+
+        log = f"{card_name} で {dmg} ダメージ＆毒 +{value}！"
+
     elif effect == "damage_weak":
-        dmg_val = int(value * 0.75) if player_weak else value
-        absorbed = min(state.get("enemy_block", 0), dmg_val)
-        state["enemy_block"] = state.get("enemy_block", 0) - absorbed
-        dmg_val -= absorbed
-        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg_val)
-        if "enemy_status" not in state:
-            state["enemy_status"] = {}
-        state["enemy_status"]["weak"] = state["enemy_status"].get("weak", 0) + value
-        log = f"{card_name} で {dmg_val} ダメージ＆敵に weak +{value} 付与！"
+        dmg = calc_damage(value)
+
+        absorbed = min(state.get("enemy_block", 0), dmg)
+        state["enemy_block"] -= absorbed
+        dmg -= absorbed
+
+        state["enemy_hp"] = max(0, state["enemy_hp"] - dmg)
+        enemy_status["weak"] = enemy_status.get("weak", 0) + value
+
+        log = f"{card_name} で {dmg} ダメージ＆弱体 +{value}！"
+
     elif effect == "energy":
         state["energy"] = min(state["energy"] + value, 10)
         log = f"{card_name} でエネルギー +{value}！"
 
-    
-    # 手札から捨て札へ
+    # ───────── カード移動
     state["hand"].remove(card_name)
     state["discard"].append(card_name)
 
-    # ✅ 撃破判定（ここが重要）
+    # ───────── 撃破判定
     if state["game_mode"] == "battle" and state["enemy_hp"] <= 0:
 
-        # nodeは最初に取得したやつを使う（再取得不要）
         if node and node["type"] == "boss":
             state["floor"] = state.get("floor", 1) + 1
             state["current_node"] = "n0"
-            state["game_mode"] = "map"   # ✅ 明示的に戻す（安定化）
+            state["game_mode"] = "map"
 
             save_state(state)
 
             enriched = enrich_state(state)
-            enriched["log"] = f"{log} 🔥 ボス撃破！Act {state['floor']} に進みます！"
+            enriched["log"] = f"{log} 🔥 ボス撃破！Act {state['floor']}へ！"
             return jsonify(enriched)
 
-        # ✅ 通常戦闘勝利
-        reward_cards = generate_reward_cards()
+        reward_cards = generate_reward_cards(state)
 
         state["game_mode"] = "reward"
         state["reward_cards"] = reward_cards
@@ -602,18 +757,15 @@ def use_card():
         save_state(state)
 
         enriched = enrich_state(state)
-        enriched["log"] = log + " 戦闘に勝利！報酬を獲得できます。"
+        enriched["log"] = log + " 戦闘に勝利！"
         return jsonify(enriched)
 
-    # ✅ 通常続行
+    # ───────── 通常保存
     save_state(state)
 
     enriched = enrich_state(state)
     enriched["log"] = log
     return jsonify(enriched)
-
-
-
 
 @app.route("/action/end_turn", methods=["POST"])
 def end_turn():
@@ -625,69 +777,111 @@ def end_turn():
     if node is None or node["type"] not in ("battle", "elite", "boss"):
         return jsonify({"error": "Not in battle"}), 400
 
-    # 手札を全て捨て札へ
+    # ───────── ステータス初期化
+    if "player_status" not in state:
+        state["player_status"] = {}
+    if "enemy_status" not in state:
+        state["enemy_status"] = {}
+
+    player_status = state["player_status"]
+    enemy_status  = state["enemy_status"]
+
+    # ───────── 手札を捨て札へ
     state["discard"].extend(state["hand"])
     state["hand"] = []
 
-    # 毒ダメージ処理
     log = ""
-    poison_log = apply_poison(state)
-    log += poison_log
 
-    # ✅ ここで先に撃破判定する（順番が超重要）
+    # ───────── 毒ダメージ
+    poison = enemy_status.get("poison", 0)
+    if poison > 0:
+        state["enemy_hp"] -= poison
+        log += f"毒で {poison} ダメージ！ "
+
+    # ───────── 敵撃破チェック（超重要：先にやる）
     if state["enemy_hp"] <= 0:
 
-        # ✅ ボスならAct進行
+        # ボス撃破
         if node and node["type"] == "boss":
             state["floor"] = state.get("floor", 1) + 1
             state["current_node"] = "n0"
+            state["game_mode"] = "map"
 
             save_state(state)
             enriched = enrich_state(state)
-            enriched["log"] = f"🔥 ボス撃破！Act {state['floor']} に進みます！"
+            enriched["log"] = log + f"🔥 ボス撃破！Act {state['floor']}へ！"
             return jsonify(enriched)
 
-        # ✅ 通常戦闘勝利
-        reward_cards = generate_reward_cards()
+        # 通常勝利
+        reward_cards = generate_reward_cards(state)
         state["game_mode"] = "reward"
         state["reward_cards"] = reward_cards
         state["reward_type"] = "battle"
 
         save_state(state)
         enriched = enrich_state(state)
-        enriched["log"] = log + " 戦闘に勝利！報酬を獲得できます。"
+        enriched["log"] = log + "戦闘に勝利！"
         return jsonify(enriched)
 
-    # ✅ 敵行動（敵が生きているときだけ）
+    # ───────── 敵行動
     enemy_intent = state.get("enemy_intent", "attack")
 
     if enemy_intent == "attack":
-        enemy_attack(state)
-        log += "敵が 6 ダメージ攻撃！"
+        base = 6
+
+        # 敵weak（攻撃低下）
+        if enemy_status.get("weak", 0) > 0:
+            base *= 0.75
+
+        # プレイヤーvulnerable（被ダメ増）
+        if player_status.get("vulnerable", 0) > 0:
+            base *= 1.5
+
+        dmg = int(base)
+
+        absorbed = min(state.get("player_block", 0), dmg)
+        state["player_block"] -= absorbed
+        dmg -= absorbed
+
+        state["player_hp"] = max(0, state["player_hp"] - dmg)
+
+        log += f"敵が {dmg} ダメージ攻撃！ "
+
     elif enemy_intent == "block":
         state["enemy_block"] = state.get("enemy_block", 0) + 5
-        log += "敵がブロック +5！"
+        log += "敵がブロック +5！ "
 
-    # ブロックリセット
+    # ───────── 状態減少（これ重要）
+    def decay(status):
+        for key in list(status.keys()):
+            if key == "poison":
+                continue  # 毒は減らない（スレスパ仕様）
+            status[key] -= 1
+            if status[key] <= 0:
+                del status[key]
+
+    decay(player_status)
+    decay(enemy_status)
+
+    # ───────── ブロックリセット
     state["player_block"] = 0
 
-    # プレイヤー死亡
+    # ───────── プレイヤー死亡
     if state["player_hp"] <= 0:
         save_state(state)
         enriched = enrich_state(state)
-        enriched["log"] = log + " ゲームオーバー..."
+        enriched["log"] = log + "ゲームオーバー..."
         return jsonify(enriched)
 
-    # 次ターン
+    # ───────── 次ターン開始
     state["energy"] = 3
     draw_cards(state, 5)
     state["enemy_intent"] = decide_enemy_intent()
 
     save_state(state)
     enriched = enrich_state(state)
-    enriched["log"] = log + " 次のターン開始！"
+    enriched["log"] = log + "次のターン！"
     return jsonify(enriched)
-
 
 
 
@@ -801,7 +995,7 @@ def rest_select():
         enriched["log"] = "休憩！HP +15 回復。マップへ戻ります。"
         return jsonify(enriched)
     elif choice == "shop":
-        reward_cards = generate_reward_cards()
+        reward_cards = generate_reward_cards(state)
         state["game_mode"] = "reward"
         state["reward_cards"] = reward_cards
         state["reward_type"] = "shop"

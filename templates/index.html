@@ -790,6 +790,133 @@
     ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
     ::-webkit-scrollbar-thumb { background: rgba(79, 195, 247, 0.3); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(79, 195, 247, 0.5); }
+
+    
+  /* 初期カード（スターター） */
+  .card-starter {
+    border-color: rgba(120, 144, 156, 0.6);
+    background: linear-gradient(160deg, #16213e 0%, #0f1a30 100%);
+    opacity: 0.95;
+  }
+  .card-starter .card-name {
+    color: #b0bec5;
+  }
+
+  /* コモン */
+  .card-common {
+    border-color: rgba(176, 190, 197, 0.7);
+    box-shadow: 0 0 6px rgba(176, 190, 197, 0.2);
+  }
+  .card-common .card-name {
+    color: #cfd8dc;
+  }
+
+  /* アンコモン */
+  .card-uncommon {
+    border-color: #66bb6a;
+    box-shadow: 
+      0 0 12px rgba(102, 187, 106, 0.35),
+      0 0 24px rgba(102, 187, 106, 0.15);
+  }
+  .card-uncommon .card-name {
+    color: #81c784;
+    text-shadow: 0 0 8px rgba(102, 187, 106, 0.4);
+  }
+
+  /* レア */
+  .card-rare {
+    border-color: #42a5f5;
+    box-shadow:
+      0 0 14px rgba(66, 165, 245, 0.4),
+      0 0 30px rgba(66, 165, 245, 0.2);
+    animation: rareGlow 1.8s infinite alternate;
+  }
+  .card-rare .card-name {
+    color: #64b5f6;
+    text-shadow: 0 0 10px rgba(66, 165, 245, 0.6);
+  }
+
+  /* レアだけ発光アニメーション */
+  @keyframes rareGlow {
+    from {
+      box-shadow:
+        0 0 8px rgba(66,165,245,0.4),
+        0 0 20px rgba(66,165,245,0.15);
+    }
+    to {
+      box-shadow:
+        0 0 22px rgba(66,165,245,0.75),
+        0 0 40px rgba(66,165,245,0.35);
+    }
+  }
+
+
+  /* ─────────────────────────────
+    🎁 報酬カードにも適用
+  ──────────────────────────── */
+
+  .reward-card-btn.card-starter {
+    border-color: rgba(120, 144, 156, 0.6);
+  }
+  .reward-card-btn.card-common {
+    border-color: rgba(176, 190, 197, 0.7);
+  }
+  .reward-card-btn.card-uncommon {
+    border-color: #66bb6a;
+    box-shadow: 0 0 10px rgba(102, 187, 106, 0.3);
+  }
+  .reward-card-btn.card-rare {
+    border-color: #42a5f5;
+    box-shadow:
+      0 0 14px rgba(66, 165, 245, 0.5),
+      0 0 28px rgba(66, 165, 245, 0.25);
+  }
+
+  /* ─────────────────────────────
+   状態異常表示（横並び）
+──────────────────────────── */
+
+.status-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.status-effect {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* 色分け */
+.status-effect.poison {
+  color: #66bb6a;
+  text-shadow: 0 0 6px rgba(102,187,106,0.5);
+}
+
+.status-effect.weak {
+  color: #4fc3f7;
+  text-shadow: 0 0 6px rgba(79,195,247,0.5);
+}
+
+.status-effect.vulnerable {
+  color: #ff8a65;
+  text-shadow: 0 0 6px rgba(255,138,101,0.5);
+}
+
+.status-effect.frail {
+  color: #ce93d8;
+  text-shadow: 0 0 6px rgba(206,147,216,0.5);
+}
+
+.status-effect.strength {
+  color: #ffd54f;
+  text-shadow: 0 0 8px rgba(255,213,79,0.6);
+}
+
   </style>
 </head>
 <body>
@@ -811,50 +938,59 @@
 <div id="game-screen">
 
   <!-- ステータスバー（カード風レイアウト） -->
-  <div id="status-bar">
-    <!-- プレイヤーカード -->
-    <div class="status-card-player">
-      <div class="status-card-title">⚔ プレイヤー</div>
-      <div class="status-row">
-        <span class="stat-label">HP</span>
-        <span class="stat-value hp" id="player-hp">50</span>
-      </div>
-      <div class="status-row">
-        <span class="stat-label">ブロック</span>
-        <span class="stat-value block" id="player-block">0</span>
-      </div>
-      <div class="status-row">
-        <span class="stat-label">エネルギー</span>
-        <span class="stat-value energy" id="energy">3</span>
-      </div>
-      <button id="btn-save-quick">💾 セーブ</button>
+<div id="status-bar">
+
+  <!-- プレイヤーカード -->
+  <div class="status-card-player">
+    <div class="status-card-title">⚔ プレイヤー</div>
+
+    <div class="status-row">
+      <span class="stat-label">HP</span>
+      <span class="stat-value hp" id="player-hp">50</span>
     </div>
 
-    <!-- 敵カード -->
-    <div class="status-card-enemy">
-      <div class="status-card-title">👹 敵</div>
-      <div class="status-row">
-        <span class="stat-label">HP</span>
-        <span class="stat-value enemy-hp" id="enemy-hp">-</span>
-      </div>
-      <div class="status-row">
-        <span class="stat-label">行動</span>
-        <span class="stat-value enemy-action" id="enemy-action">-</span>
-      </div>
-      <div class="status-row">
-        <span class="stat-label">ノード</span>
-        <span class="stat-value" id="current-node">-</span>
-      </div>
-      <div class="status-row" id="enemy-poison-row" style="display:none">
-        <span class="stat-label">毒</span>
-        <span class="stat-value poison" id="enemy-poison">-</span>
-      </div>
-      <div class="status-row" id="enemy-weak-row" style="display:none">
-        <span class="stat-label">弱体</span>
-        <span class="stat-value weak" id="enemy-weak">-</span>
-      </div>
+    <div class="status-row">
+      <span class="stat-label">ブロック</span>
+      <span class="stat-value block" id="player-block">0</span>
     </div>
+
+    <div class="status-row">
+      <span class="stat-label">エネルギー</span>
+      <span class="stat-value energy" id="energy">3</span>
+    </div>
+
+ <div class="status-effects" id="player-status-effects"></div>
+
+    <!-- ✅ ここまで -->
+
+    <button id="btn-save-quick">💾 セーブ</button>
   </div>
+
+  <!-- 敵カード -->
+  <div class="status-card-enemy">
+    <div class="status-card-title">👹 敵</div>
+
+    <div class="status-row">
+      <span class="stat-label">HP</span>
+      <span class="stat-value enemy-hp" id="enemy-hp">-</span>
+    </div>
+
+    <div class="status-row">
+      <span class="stat-label">行動</span>
+      <span class="stat-value enemy-action" id="enemy-action">-</span>
+    </div>
+
+    <div class="status-row">
+      <span class="stat-label">ノード</span>
+      <span class="stat-value" id="current-node">-</span>
+    </div>
+
+    <div class="status-effects" id="enemy-status-effects"></div>
+
+  </div>
+
+</div>
+
 
   <!-- ログ -->
   <div id="log-box">ゲームを開始しました。</div>
@@ -967,7 +1103,6 @@ const CARD_DESC = {
 // ゲーム中かどうか
 let isInGame = false;
 
-// ── 状態更新 ──────────────────────────────────
 function applyState(data) {
   if (data.error) {
     setLog('⚠ ' + data.error);
@@ -991,25 +1126,39 @@ function applyState(data) {
     $('enemy-action').textContent = '-';
   }
 
-  // 敵の毒状態表示
-  const enemyPoisonRow = $('enemy-poison-row');
-  const enemyPoisonEl = $('enemy-poison');
-  if (data.enemy_status && data.enemy_status.poison > 0) {
-    enemyPoisonEl.textContent = data.enemy_status.poison;
-    enemyPoisonRow.style.display = 'flex';
-  } else {
-    enemyPoisonRow.style.display = 'none';
+  // ─────────────────────────────
+  // ✅ 横並びステータス表示（追加ここ）
+  // ─────────────────────────────
+
+  function renderStatusEffects(containerId, status) {
+    const container = $(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const iconMap = {
+      poison: "☠",
+      weak: "↓",
+      vulnerable: "⚡",
+      frail: "🛡↓",
+      strength: "💪"
+    };
+
+    Object.entries(status || {}).forEach(([key, value]) => {
+      if (value <= 0) return;
+
+      const el = document.createElement('div');
+      el.className = `status-effect ${key}`;
+      el.textContent = `${iconMap[key] || key} ${value}`;
+
+      container.appendChild(el);
+    });
   }
 
-  // 敵の弱体状態表示
-  const enemyWeakRow = $('enemy-weak-row');
-  const enemyWeakEl = $('enemy-weak');
-  if (data.enemy_status && data.enemy_status.weak > 0) {
-    enemyWeakEl.textContent = data.enemy_status.weak;
-    enemyWeakRow.style.display = 'flex';
-  } else {
-    enemyWeakRow.style.display = 'none';
-  }
+  renderStatusEffects('player-status-effects', data.player_status || {});
+  renderStatusEffects('enemy-status-effects', data.enemy_status || {});
+
+  // ─────────────────────────────
 
   // デッキ情報
   $('deck-info').textContent =
@@ -1029,7 +1178,7 @@ function applyState(data) {
     return;
   }
 
-  // game_mode による画面制御
+  // 画面制御
   const gameMode = data.game_mode;
 
   if (gameMode === 'rest_choice') {
@@ -1044,6 +1193,7 @@ function applyState(data) {
     showMap(data);
   }
 }
+
 
 function setLog(msg) {
   $('log-box').textContent = msg;
@@ -1062,20 +1212,40 @@ function showBattle(data) {
 
   data.hand.forEach((cardName) => {
     const def = defs[cardName];
-    const btn = document.createElement('button');
-    btn.className = 'card-btn';
-    btn.disabled  = def.cost > data.energy;
+    if (!def) return;
 
-    const descText = CARD_DESC[def.effect] ? CARD_DESC[def.effect](def.value) : '';
+    const btn = document.createElement('button');
+
+    // 基本クラス
+    btn.className = 'card-btn';
+
+    // ✅ レアリティクラス追加（ここが今回のポイント）
+    if (def.rarity) {
+      btn.classList.add("card-" + def.rarity);
+    }
+
+    // エネルギー不足なら無効化
+    btn.disabled = def.cost > data.energy;
+
+    // 説明文生成
+    const descText = CARD_DESC[def.effect]
+      ? CARD_DESC[def.effect](def.value)
+      : '';
+
+    // カードUI
     btn.innerHTML = `
       <span class="card-name">${cardName}</span>
       <span class="card-cost">コスト: ${def.cost}</span>
       <span class="card-desc">${descText}</span>
     `;
+
+    // クリック処理
     btn.addEventListener('click', () => useCard(cardName));
+
     handArea.appendChild(btn);
   });
 
+  // 手札なし
   if (data.hand.length === 0) {
     handArea.innerHTML = '<p style="color:#7a8fa8">手札がありません</p>';
   }
@@ -1141,39 +1311,51 @@ function showRemove(data) {
 
   cards.forEach(cardName => {
     const def = defs[cardName];
+    if (!def) return;
+
     const btn = document.createElement('button');
+
+    // 基本クラス
     btn.className = 'remove-card-btn';
-    const descText = def && CARD_DESC[def.effect] ? CARD_DESC[def.effect](def.value) : '';
-    const costText = def ? `コスト: ${def.cost}` : '';
+
+    // ✅ レアリティクラス
+    if (def.rarity) {
+      btn.classList.add("card-" + def.rarity);
+    }
+
+    const descText = CARD_DESC[def.effect]
+      ? CARD_DESC[def.effect](def.value)
+      : '';
+
+    const costText = `コスト: ${def.cost}`;
+
     btn.innerHTML = `
       <span class="card-name">${cardName}</span>
       <span class="card-cost">${costText}</span>
       <span class="card-desc">${descText}</span>
     `;
-    btn.onclick = async () => {
-    const res = await fetch('/remove/select', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ card: cardName })
-    });
 
-    const result = await res.json();
-    applyState(result);
-    
-    
-    console.log(
+    btn.onclick = async () => {
+      const res = await fetch('/remove/select', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ card: cardName })
+      });
+
+      const result = await res.json();
+      applyState(result);
+
+      console.log(
         result.deck.length +
         result.hand.length +
         result.discard.length
       );
-
-
-  };
+    };
 
     removeCardsEl.appendChild(btn);
   });
 }
-
+``
 // ── 報酬画面 ──────────────────────────────────
 function showReward(data) {
   $('battle-area').style.display  = 'none';
@@ -1181,7 +1363,7 @@ function showReward(data) {
   $('reward-area').style.display  = 'block';
   $('rest-choice-area').style.display = 'none';
 
-  // reward_type に応じてタイトルとサブタイトルを切り替える
+  // タイトル切り替え
   const rewardType = data.reward_type || 'battle';
   const titleEl = $('reward-area').querySelector('h2');
   const subtitleEl = $('reward-area').querySelector('.reward-subtitle');
@@ -1190,7 +1372,6 @@ function showReward(data) {
     titleEl.textContent = '🛒 ショップ';
     subtitleEl.textContent = 'カードを1枚選んでください';
   } else {
-    // 'battle' またはその他のデフォルト
     titleEl.textContent = '🎉 戦闘に勝利！';
     subtitleEl.textContent = '報酬を獲得できます';
   }
@@ -1204,15 +1385,29 @@ function showReward(data) {
   rewards.forEach(cardName => {
     const def = defs[cardName];
     if (!def) return;
+
     const btn = document.createElement('button');
+
+    // 基本クラス
     btn.className = 'reward-card-btn';
-    const descText = CARD_DESC[def.effect] ? CARD_DESC[def.effect](def.value) : '';
+
+    // ✅ レアリティクラス
+    if (def.rarity) {
+      btn.classList.add("card-" + def.rarity);
+    }
+
+    const descText = CARD_DESC[def.effect]
+      ? CARD_DESC[def.effect](def.value)
+      : '';
+
     btn.innerHTML = `
       <span class="card-name">${cardName}</span>
       <span class="card-cost">コスト: ${def.cost}</span>
       <span class="card-desc">${descText}</span>
     `;
+
     btn.addEventListener('click', () => selectReward(cardName));
+
     rewardArea.appendChild(btn);
   });
 
@@ -1220,7 +1415,6 @@ function showReward(data) {
     rewardArea.innerHTML = '<p style="color:#7a8fa8">報酬カードがありません</p>';
   }
 }
-
 // ── 終了画面 ──────────────────────────────────
 function showEnd(isWin) {
   $('game-screen').style.display  = 'none';
