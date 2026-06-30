@@ -806,53 +806,56 @@
     color: #b0bec5;
   }
 
-  /* コモン */
+  
+  /* コモン（緑） */
   .card-common {
-    border-color: rgba(176, 190, 197, 0.7);
-    box-shadow: 0 0 6px rgba(176, 190, 197, 0.2);
+    border-color: #4caf50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
   }
   .card-common .card-name {
-    color: #cfd8dc;
+    color: #81c784;
+    text-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
   }
 
-  /* アンコモン */
+  /* アンコモン（青） */
   .card-uncommon {
-    border-color: #66bb6a;
+    border-color: #42a5f5;
     box-shadow: 
-      0 0 12px rgba(102, 187, 106, 0.35),
-      0 0 24px rgba(102, 187, 106, 0.15);
+      0 0 10px rgba(66, 165, 245, 0.4),
+      0 0 20px rgba(66, 165, 245, 0.2);
   }
   .card-uncommon .card-name {
-    color: #81c784;
-    text-shadow: 0 0 8px rgba(102, 187, 106, 0.4);
+    color: #64b5f6;
+    text-shadow: 0 0 8px rgba(66, 165, 245, 0.5);
   }
 
-  /* レア */
+  /* レア（黄色） */
   .card-rare {
-    border-color: #42a5f5;
+    border-color: #ffd600;
     box-shadow:
-      0 0 14px rgba(66, 165, 245, 0.4),
-      0 0 30px rgba(66, 165, 245, 0.2);
+      0 0 14px rgba(255, 214, 0, 0.6),
+      0 0 28px rgba(255, 214, 0, 0.3);
     animation: rareGlow 1.8s infinite alternate;
   }
   .card-rare .card-name {
-    color: #64b5f6;
-    text-shadow: 0 0 10px rgba(66, 165, 245, 0.6);
+    color: #fff176;
+    text-shadow: 0 0 10px rgba(255, 214, 0, 0.7);
   }
 
-  /* レアだけ発光アニメーション */
+  /* レア発光アニメーション（黄色に変更） */
   @keyframes rareGlow {
     from {
       box-shadow:
-        0 0 8px rgba(66,165,245,0.4),
-        0 0 20px rgba(66,165,245,0.15);
+        0 0 10px rgba(255,214,0,0.5),
+        0 0 20px rgba(255,214,0,0.2);
     }
     to {
       box-shadow:
-        0 0 22px rgba(66,165,245,0.75),
-        0 0 40px rgba(66,165,245,0.35);
+        0 0 24px rgba(255,214,0,0.8),
+        0 0 40px rgba(255,214,0,0.35);
     }
   }
+
 
 
   /* ─────────────────────────────
@@ -863,17 +866,20 @@
     border-color: rgba(120, 144, 156, 0.6);
   }
   .reward-card-btn.card-common {
-    border-color: rgba(176, 190, 197, 0.7);
+    border-color: #4caf50; /* 緑 */
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
   }
+
   .reward-card-btn.card-uncommon {
-    border-color: #66bb6a;
-    box-shadow: 0 0 10px rgba(102, 187, 106, 0.3);
+    border-color: #42a5f5; /* 青 */
+    box-shadow: 0 0 10px rgba(66, 165, 245, 0.4);
   }
+
   .reward-card-btn.card-rare {
-    border-color: #42a5f5;
+    border-color: #ffd600; /* 黄色 */
     box-shadow:
-      0 0 14px rgba(66, 165, 245, 0.5),
-      0 0 28px rgba(66, 165, 245, 0.25);
+      0 0 14px rgba(255, 214, 0, 0.6),
+      0 0 28px rgba(255, 214, 0, 0.3);
   }
 
   /* ─────────────────────────────

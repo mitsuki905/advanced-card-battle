@@ -230,7 +230,7 @@ RARE_REWARD_POOL = [
 ENEMY_ACTIONS = [
     {"type": "attack", "value": 6, "weight": 4},
     {"type": "attack", "value": 9, "weight": 2},
-    {"type": "block",  "value": 6, "weight": 2},
+    {"type": "block",  "value": 5, "weight": 2},
     {"type": "weak",   "value": 1, "weight": 1},
     {"type": "vulnerable", "value": 1, "weight": 1},
 ]
@@ -521,8 +521,8 @@ def generate_reward_cards(state, only_rare=False):
 
     floor = state.get("floor", 1)
 
-    rare_rate = 0.1 + (floor - 1) * 0.05
-    rare_rate = min(rare_rate, 0.5)  # 上限
+    rare_rate = 0.2 + (floor - 1) * 0.07
+    rare_rate = min(rare_rate, 0.6)
 
     uncommon_rate = 0.3
     common_rate = 1.0 - (rare_rate + uncommon_rate)
@@ -935,8 +935,6 @@ def end_turn():
     # 状態減少
     for status in [player_status, enemy_status]:
         for key in list(status.keys()):
-            if key == "poison":
-                continue
             status[key] -= 1
             if status[key] <= 0:
                 del status[key]
