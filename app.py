@@ -151,15 +151,15 @@ CARD_DEFS = {
 
     # 高火力系
     "Pummel":            {"cost": 3, "effect": "damage",      "value": 20, "rarity": "rare"},
-    "Execution":         {"cost": 2, "effect": "damage",      "value": 16, "rarity": "rare"},
+    "Execution":         {"cost": 2, "effect": "damage",      "value": 15, "rarity": "rare"},
 
     # 防御特化
     "Fortress":          {"cost": 1, "effect": "block",       "value": 10, "rarity": "rare"},
-    "Absolute Guard":    {"cost": 1, "effect": "block",       "value": 12, "rarity": "rare"},
+    "Absolute Guard":    {"cost": 1, "effect": "damage_block",       "value": 7, "rarity": "rare"},
 
     # リソース操作
     "Recharge":          {"cost": 0, "effect": "energy",      "value": 1,  "rarity": "rare"},
-    "Overdrive":         {"cost": 0, "effect": "energy",      "value": 2,  "rarity": "rare"},
+    "Overdrive":         {"cost": 1, "effect": "energy",      "value": 2,  "rarity": "rare"},
     "Deep Focus":        {"cost": 0, "effect": "draw",        "value": 3,  "rarity": "rare"},
 
     # 状態異常ビルド強化
