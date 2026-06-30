@@ -225,6 +225,17 @@ RARE_REWARD_POOL = [
 ]
 
 # ─────────────────────────────────────────
+# 敵の行動テーブル
+# ─────────────────────────────────────────
+ENEMY_ACTIONS = [
+    {"type": "attack", "value": 6, "weight": 4},
+    {"type": "attack", "value": 9, "weight": 2},
+    {"type": "block",  "value": 6, "weight": 2},
+    {"type": "weak",   "value": 1, "weight": 1},
+    {"type": "vulnerable", "value": 1, "weight": 1},
+]
+
+# ─────────────────────────────────────────
 # マップ定義
 # ─────────────────────────────────────────
 MAP_NODES = [
@@ -294,31 +305,41 @@ def load_state():
     conn = get_db()
     row = conn.execute("SELECT * FROM game_state WHERE id=1").fetchone()
     conn.close()
+
     if row is None:
         return None
-    # enemy_status / player_status の安全な読み込み
-    try:
-        enemy_status = json.loads(row["enemy_status"]) if row["enemy_status"] else {}
-    except Exception:
-        enemy_status = {}
-    try:
-        player_status = json.loads(row["player_status"]) if row["player_status"] else {}
-    except Exception:
-        player_status = {}
+
+    # ───────── 安全ロード関数
+    def safe_load(value, default):
+        try:
+            return json.loads(value) if value else default
+        except Exception:
+            return default
+
+    enemy_status  = safe_load(row["enemy_status"], {})
+    player_status = safe_load(row["player_status"], {})
+    deck          = safe_load(row["deck"], [])
+    hand          = safe_load(row["hand"], [])
+    discard       = safe_load(row["discard"], [])
+    reward_cards  = safe_load(row["reward_cards"], [])
+
+    # ✅ ここが今回の重要修正
+    enemy_intent = safe_load(row["enemy_intent"], None)
+
     return {
         "player_hp":     row["player_hp"],
         "enemy_hp":      row["enemy_hp"],
         "player_block":  row["player_block"],
         "enemy_block":   row["enemy_block"] if row["enemy_block"] else 0,
         "energy":        row["energy"],
-        "deck":          json.loads(row["deck"]),
-        "hand":          json.loads(row["hand"]),
-        "discard":       json.loads(row["discard"]),
+        "deck":          deck,
+        "hand":          hand,
+        "discard":       discard,
         "current_node":  row["current_node"],
         "game_mode":     _get_game_mode(row),
-        "reward_cards":  json.loads(row["reward_cards"]) if row["reward_cards"] else [],
+        "reward_cards":  reward_cards,
         "remove_cards":  [],
-        "enemy_intent":  row["enemy_intent"] if row["enemy_intent"] else "attack",
+        "enemy_intent":  enemy_intent,  
         "reward_type":   row["reward_type"] if row["reward_type"] else "battle",
         "enemy_status":  enemy_status,
         "player_status": player_status,
@@ -329,9 +350,10 @@ def load_state():
 def save_state(state):
     conn = get_db()
     conn.execute("DELETE FROM game_state WHERE id=1")
+
     conn.execute("""
         INSERT INTO game_state
-            (id, player_hp, enemy_hp, player_block, enemy_block, energy, deck, hand, discard, current_node, game_mode, reward_cards, enemy_intent, enemy_status, player_status,floor)
+            (id, player_hp, enemy_hp, player_block, enemy_block, energy, deck, hand, discard, current_node, game_mode, reward_cards, enemy_intent, enemy_status, player_status, floor)
         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         state["player_hp"],
@@ -345,11 +367,13 @@ def save_state(state):
         state["current_node"],
         state.get("game_mode", "battle"),
         json.dumps(state.get("reward_cards", [])),
-        state.get("enemy_intent", "attack"),
+        json.dumps(state.get("enemy_intent", {"type": "attack", "value": 6})),
+
         json.dumps(state.get("enemy_status", {})),
         json.dumps(state.get("player_status", {})),
         state.get("floor", 1)
     ))
+
     conn.commit()
     conn.close()
 
@@ -366,6 +390,9 @@ def state_to_row(state):
         state["current_node"],
         state.get("game_mode", "battle"),
         json.dumps(state.get("reward_cards", [])),
+        json.dumps(state.get("enemy_intent", {"type": "attack", "value": 6})),
+        json.dumps(state.get("enemy_status", {})),
+        json.dumps(state.get("player_status", {})),
     )
 
 
@@ -408,16 +435,50 @@ def draw_cards(state, n=1):
             state["hand"].append(state["deck"].pop(0))
 
 
-def enemy_attack(state):
-    """敵の攻撃（固定6ダメージ、ブロックで軽減）"""
-    dmg = 6
-    # weak状態なら敵の攻撃力を0.75倍にする
-    if state.get("enemy_status", {}).get("weak", 0) > 0:
-        dmg = int(dmg * 0.75)
-    absorbed = min(state["player_block"], dmg)
-    state["player_block"] -= absorbed
-    actual_damage = dmg - absorbed
-    state["player_hp"] -= actual_damage
+def enemy_action(state):
+    if "player_status" not in state:
+        state["player_status"] = {}
+    if "enemy_status" not in state:
+        state["enemy_status"] = {}
+
+    intent = state.get("enemy_intent", {"type": "attack", "value": 6})
+    etype = intent["type"]
+    value = intent["value"]
+
+    log = ""
+
+    if etype == "attack":
+        dmg = value
+
+        if state["enemy_status"].get("weak", 0) > 0:
+            dmg *= 0.75
+
+        if state["player_status"].get("vulnerable", 0) > 0:
+            dmg *= 1.5
+
+        dmg = int(dmg)
+
+        absorbed = min(state["player_block"], dmg)
+        state["player_block"] -= absorbed
+        actual = dmg - absorbed
+
+        state["player_hp"] = max(0, state["player_hp"] - actual)
+
+        log = f"敵が {actual} ダメージ！ "
+
+    elif etype == "block":
+        state["enemy_block"] += value
+        log = f"敵がブロック +{value}！ "
+
+    elif etype == "weak":
+        state["player_status"]["weak"] = state["player_status"].get("weak", 0) + value
+        log = f"敵が弱体付与！ "
+
+    elif etype == "vulnerable":
+        state["player_status"]["vulnerable"] = state["player_status"].get("vulnerable", 0) + value
+        log = f"敵が被ダメ増加付与！ "
+
+    return log
 
 
 def apply_poison(state):
@@ -449,8 +510,14 @@ def available_next_nodes(current_node_id):
 
 import random
 
-def generate_reward_cards(state):
+def generate_reward_cards(state, only_rare=False):
     rewards = []
+
+    if only_rare:
+        for _ in range(3):
+            card = random.choice(RARE_REWARD_POOL)
+            rewards.append(card)
+        return rewards
 
     floor = state.get("floor", 1)
 
@@ -477,8 +544,22 @@ def generate_reward_cards(state):
 
 
 def decide_enemy_intent():
-    """敵の次の行動をランダムに決定（"attack" または "block"）"""
-    return random.choice(["attack", "block"])
+    """重み付きで敵の行動を決定"""
+
+    total_weight = sum(a["weight"] for a in ENEMY_ACTIONS)
+    r = random.uniform(0, total_weight)
+
+    current = 0
+    for action in ENEMY_ACTIONS:
+        current += action["weight"]
+        if r <= current:
+            return {
+                "type": action["type"],
+                "value": action["value"]
+            }
+
+    # 念のため fallback
+    return {"type": "attack", "value": 6}
 
 
 # ─────────────────────────────────────────
@@ -806,13 +887,14 @@ def end_turn():
 
         # ボス撃破
         if node and node["type"] == "boss":
-            state["floor"] = state.get("floor", 1) + 1
-            state["current_node"] = "n0"
-            state["game_mode"] = "map"
+            reward_cards = generate_reward_cards(state, only_rare=True)
+            state["game_mode"] = "reward"
+            state["reward_cards"] = reward_cards
+            state["reward_type"] = "boss"
 
             save_state(state)
             enriched = enrich_state(state)
-            enriched["log"] = log + f"🔥 ボス撃破！Act {state['floor']}へ！"
+            enriched["log"] = log + f"🔥 ボス撃破！報酬を選んでください！"
             return jsonify(enriched)
 
         # 通常勝利
@@ -826,48 +908,18 @@ def end_turn():
         enriched["log"] = log + "戦闘に勝利！"
         return jsonify(enriched)
 
+ 
+    
     # ───────── 敵行動
-    enemy_intent = state.get("enemy_intent", "attack")
+    if "enemy_intent" not in state:
+        state["enemy_intent"] = decide_enemy_intent()
 
-    if enemy_intent == "attack":
-        base = 6
+    log += enemy_action(state)
 
-        # 敵weak（攻撃低下）
-        if enemy_status.get("weak", 0) > 0:
-            base *= 0.75
-
-        # プレイヤーvulnerable（被ダメ増）
-        if player_status.get("vulnerable", 0) > 0:
-            base *= 1.5
-
-        dmg = int(base)
-
-        absorbed = min(state.get("player_block", 0), dmg)
-        state["player_block"] -= absorbed
-        dmg -= absorbed
-
-        state["player_hp"] = max(0, state["player_hp"] - dmg)
-
-        log += f"敵が {dmg} ダメージ攻撃！ "
-
-    elif enemy_intent == "block":
-        state["enemy_block"] = state.get("enemy_block", 0) + 5
-        log += "敵がブロック +5！ "
-
-    # ───────── 状態減少（これ重要）
-    def decay(status):
-        for key in list(status.keys()):
-            if key == "poison":
-                continue  # 毒は減らない（スレスパ仕様）
-            status[key] -= 1
-            if status[key] <= 0:
-                del status[key]
-
-    decay(player_status)
-    decay(enemy_status)
 
     # ───────── ブロックリセット
     state["player_block"] = 0
+
 
     # ───────── プレイヤー死亡
     if state["player_hp"] <= 0:
@@ -876,15 +928,32 @@ def end_turn():
         enriched["log"] = log + "ゲームオーバー..."
         return jsonify(enriched)
 
+
+
     # ───────── 次ターン開始
+
+    # 状態減少
+    for status in [player_status, enemy_status]:
+        for key in list(status.keys()):
+            if key == "poison":
+                continue
+            status[key] -= 1
+            if status[key] <= 0:
+                del status[key]
+
+    # エネルギー回復など
     state["energy"] = 3
     draw_cards(state, 5)
     state["enemy_intent"] = decide_enemy_intent()
 
+    # ✅ これ忘れずに
     save_state(state)
+
     enriched = enrich_state(state)
     enriched["log"] = log + "次のターン！"
     return jsonify(enriched)
+
+
 
 
 
@@ -1039,6 +1108,9 @@ def reward_select():
 
     # スキップ対応
     if card_name == "__skip__":
+        if state.get("reward_type") == "boss":
+            state["floor"] = state.get("floor", 1) + 1
+            state["current_node"] = "n0"
         state["game_mode"] = "map"
         state["reward_cards"] = []
         save_state(state)
@@ -1051,6 +1123,9 @@ def reward_select():
 
     # カードをデッキに追加
     state["deck"].append(card_name)
+    if state.get("reward_type") == "boss":
+        state["floor"] = state.get("floor", 1) + 1
+        state["current_node"] = "n0"
     state["game_mode"] = "map"
     state["reward_cards"] = []
 
@@ -1103,24 +1178,67 @@ def remove_select():
 # ─────────────────────────────────────────
 # セーブ / ロード
 # ─────────────────────────────────────────
-@app.route("/save", methods=["POST"])
+@app.route("/manual_save", methods=["POST"])
 def manual_save():
     data = request.get_json()
     save_name = data.get("name", "セーブデータ")
+
     state = load_state()
     if state is None:
         return jsonify({"error": "No game in progress"}), 404
 
     conn = get_db()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     conn.execute("""
-        INSERT INTO save_data
-            (name, player_hp, enemy_hp, player_block, energy, deck, hand, discard, current_node, game_mode, reward_cards, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (save_name,) + state_to_row(state) + (now,))
+        INSERT INTO save_data (
+            name,
+            player_hp,
+            enemy_hp,
+            player_block,
+            energy,
+            deck,
+            hand,
+            discard,
+            current_node,
+            game_mode,
+            reward_cards,
+            created_at,
+            enemy_intent,
+            enemy_status,
+            player_status,
+            reward_type,
+            enemy_block
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        save_name,
+        state["player_hp"],
+        state["enemy_hp"],
+        state["player_block"],
+        state["energy"],
+        json.dumps(state["deck"]),
+        json.dumps(state["hand"]),
+        json.dumps(state["discard"]),
+        state["current_node"],
+        state.get("game_mode", "battle"),
+        json.dumps(state.get("reward_cards", [])),
+        now,
+        json.dumps(state.get("enemy_intent", {"type": "attack", "value": 6})),
+        json.dumps(state.get("enemy_status", {})),
+        json.dumps(state.get("player_status", {})),
+        state.get("reward_type", "battle"),
+        state.get("enemy_block", 0),
+    ))
+
     conn.commit()
     conn.close()
-    return jsonify({"message": f"「{save_name}」にセーブしました。", "saved_at": now})
+
+    return jsonify({
+        "message": f"「{save_name}」にセーブしました。",
+        "saved_at": now
+    })
+
 
 
 @app.route("/save/list", methods=["GET"])
@@ -1144,7 +1262,6 @@ def load_save():
         return jsonify({"error": "Save not found"}), 404
 
     state = row_to_state(row)
-    save_state(state)
     enriched = enrich_state(state)
     enriched["log"] = f"「{row['name']}」をロードしました。"
     return jsonify(enriched)

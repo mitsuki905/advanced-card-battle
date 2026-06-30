@@ -481,6 +481,10 @@
       letter-spacing: 2px;
       text-shadow: 0 0 12px rgba(255, 213, 79, 0.5);
     }
+    #reward-area.boss-reward h2 {
+      color: #ff8a65;
+      text-shadow: 0 0 12px rgba(255, 138, 101, 0.6);
+    }
     #reward-area .reward-subtitle {
       color: #9ecfdb;
       font-size: .95rem;
@@ -881,6 +885,7 @@
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 6px;
+  min-height: 24px;
 }
 
 .status-effect {
@@ -959,7 +964,7 @@
       <span class="stat-value energy" id="energy">3</span>
     </div>
 
- <div class="status-effects" id="player-status-effects"></div>
+    <div class="status-effects" id="player-status-effects"></div>
 
     <!-- ✅ ここまで -->
 
@@ -1157,6 +1162,9 @@ function applyState(data) {
 
   renderStatusEffects('player-status-effects', data.player_status || {});
   renderStatusEffects('enemy-status-effects', data.enemy_status || {});
+  
+  console.log("player_status:", data.player_status);
+  console.log("enemy_status:", data.enemy_status);
 
   // ─────────────────────────────
 
@@ -1367,13 +1375,20 @@ function showReward(data) {
   const rewardType = data.reward_type || 'battle';
   const titleEl = $('reward-area').querySelector('h2');
   const subtitleEl = $('reward-area').querySelector('.reward-subtitle');
+  const rewardAreaEl = $('reward-area');
 
-  if (rewardType === 'shop') {
+  if (rewardType === 'boss') {
+    titleEl.textContent = '🔥 ボス撃破！';
+    subtitleEl.textContent = 'レアカードから報酬を選んでください';
+    rewardAreaEl.classList.add('boss-reward');
+  } else if (rewardType === 'shop') {
     titleEl.textContent = '🛒 ショップ';
     subtitleEl.textContent = 'カードを1枚選んでください';
+    rewardAreaEl.classList.remove('boss-reward');
   } else {
     titleEl.textContent = '🎉 戦闘に勝利！';
     subtitleEl.textContent = '報酬を獲得できます';
+    rewardAreaEl.classList.remove('boss-reward');
   }
 
   const rewardArea = $('reward-cards');
@@ -1496,7 +1511,7 @@ function closeSaveModal() {
 
 async function doManualSave() {
   const name = $('save-name-input').value.trim() || 'セーブデータ';
-  const data = await api('POST', '/save', { name });
+  const data = await api('POST', '/manual_save', { name });
   if (data.message) {
     setLog(data.message);
     await refreshSaveList();
@@ -1579,11 +1594,23 @@ async function checkAutosaveOnStart() {
 
 // ── 敵の行動表示ロジック ──────────────────────────
 function getEnemyIntentDisplay(intent) {
-  const intentMap = {
-    'attack': '攻撃（6）',
-    'block':  '防御（+5）',
-  };
-  return intentMap[intent] || intent;
+  if (!intent) return "-";
+
+  const type = intent.type;
+  const value = intent.value;
+
+  switch (type) {
+    case "attack":
+      return `攻撃（${value}）`;
+    case "block":
+      return `防御（+${value}）`;
+    case "weak":
+      return `弱体付与`;
+    case "vulnerable":
+      return `被ダメ増加`;
+    default:
+      return type;
+  }
 }
 
 // ── エスケープ ──────────────────────────────────
