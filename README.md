@@ -1,10 +1,3 @@
-了解です 👍  
-最終調整版として、**余計な注意書きや未実装説明を除いたシンプル＆綺麗な README** を作成しました。
-
-***
-
-# ✅ 最終版 README.md
-
 ````markdown
 # ⚔ Card Battle Roguelike (Flask)
 
