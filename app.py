@@ -122,7 +122,7 @@ CARD_DEFS = {
     "Strike":        {"cost": 1, "effect": "damage", "value": 6,  "rarity": "starter"},
     "Defend":        {"cost": 1, "effect": "block",  "value": 5,  "rarity": "starter"},
     "Draw":          {"cost": 1, "effect": "draw",   "value": 2,  "rarity": "starter"},
-    "Heavy Strike":  {"cost": 2, "effect": "damage", "value": 10, "rarity": "starter"},
+    "Weak":          {"cost": 2, "effect": "weak", "value": 3, "rarity": "starter"},
 
     # ───── コモン（安定カード） ─────
     # シンプルで扱いやすく、デッキの土台になる
@@ -134,9 +134,9 @@ CARD_DEFS = {
 
     # ───── アンコモン（戦略カード） ─────
     # シナジーや状態異常を使って戦い方を広げる
-    "Pommel Strike": {"cost": 1, "effect": "damage_draw",  "value": 8, "rarity": "uncommon"},
+    "Pommel Strike": {"cost": 1, "effect": "damage_draw",  "value": 6, "rarity": "uncommon"},
     "Twin Strike":   {"cost": 1, "effect": "damage2",      "value": 4, "rarity": "uncommon"},
-    "Armaments":     {"cost": 1, "effect": "block",        "value": 7, "rarity": "uncommon"},
+    "Armaments":     {"cost": 1, "effect": "block",        "value": 8, "rarity": "uncommon"},
 
     # 毒ビルド用（ターン経過でダメージを伸ばす）
     "Poison Strike": {"cost": 1, "effect": "poison",       "value": 5, "rarity": "uncommon"},
@@ -150,21 +150,21 @@ CARD_DEFS = {
     # 強力でゲームの方向性を決めるカード
 
     # 高火力系
-    "Pummel":            {"cost": 3, "effect": "damage",      "value": 16, "rarity": "rare"},
+    "Pummel":            {"cost": 3, "effect": "damage",      "value": 20, "rarity": "rare"},
     "Execution":         {"cost": 2, "effect": "damage",      "value": 16, "rarity": "rare"},
 
     # 防御特化
-    "Fortress":          {"cost": 2, "effect": "block",       "value": 12, "rarity": "rare"},
+    "Fortress":          {"cost": 1, "effect": "block",       "value": 10, "rarity": "rare"},
     "Absolute Guard":    {"cost": 1, "effect": "block",       "value": 12, "rarity": "rare"},
 
     # リソース操作
-    "Recharge":          {"cost": 1, "effect": "energy",      "value": 1,  "rarity": "rare"},
+    "Recharge":          {"cost": 0, "effect": "energy",      "value": 1,  "rarity": "rare"},
     "Overdrive":         {"cost": 0, "effect": "energy",      "value": 2,  "rarity": "rare"},
     "Deep Focus":        {"cost": 0, "effect": "draw",        "value": 3,  "rarity": "rare"},
 
     # 状態異常ビルド強化
     "Neurotoxin":        {"cost": 1, "effect": "poison",      "value": 8,  "rarity": "rare"},
-    "Predator Strike":   {"cost": 1, "effect": "damage_draw", "value": 7,  "rarity": "rare"},
+    "Predator Strike":   {"cost": 1, "effect": "damage_draw", "value": 8,  "rarity": "rare"},
 }
 
 # ─────────────────────────────────────────
@@ -174,7 +174,7 @@ INITIAL_DECK = (
     ["Strike"] * 5 +
     ["Defend"] * 4 +
     ["Draw"] * 1 +
-    ["Heavy Strike"] * 1
+    ["Weak"] * 1
 )
 
 # ─────────────────────────────────────────
@@ -521,7 +521,7 @@ def generate_reward_cards(state, only_rare=False):
 
     floor = state.get("floor", 1)
 
-    rare_rate = 0.2 + (floor - 1) * 0.07
+    rare_rate = 0.15 + (floor - 1) * 0.07
     rare_rate = min(rare_rate, 0.6)
 
     uncommon_rate = 0.3
